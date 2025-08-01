@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.duolingo.familyleague</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOUR_USERNAME/workspace/duolingo-profile-progress/duolingo_wrapper.sh</string>
+    </array>
+    
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>  <!-- Monday = 1 -->
+        <key>Hour</key>
+        <integer>9</integer>   <!-- 9 AM -->
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    
+    <key>RunAtLoad</key>
+    <false/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/workspace/duolingo-profile-progress/duolingo_league.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/workspace/duolingo-profile-progress/duolingo_league_error.log</string>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME/workspace/duolingo-profile-progress</string>
+</dict>
+</plist>
