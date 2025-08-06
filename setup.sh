@@ -21,24 +21,25 @@ chmod +x "$SCRIPT_DIR/duolingo_cron.sh"
 
 # Update the LaunchAgent plist with correct username
 echo "📝 Updating LaunchAgent configuration..."
+cp "$SCRIPT_DIR/com.duolingo.familyleague.plist.example" "$SCRIPT_DIR/com.duolingo.familyleague.plist"
 sed -i '' "s/YOUR_USERNAME/$USERNAME/g" "$SCRIPT_DIR/com.duolingo.familyleague.plist"
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
-pip3 install -r requirements.txt
+uv sync
 
-# Create config file if it doesn't exist
-if [ ! -f "$SCRIPT_DIR/family_league_config.json" ]; then
-    echo "⚙️  Creating configuration file..."
-    cp "$SCRIPT_DIR/family_league_config.json.example" "$SCRIPT_DIR/family_league_config.json"
-    echo "📝 Please edit family_league_config.json with your family's information"
+# Create .env file if it doesn't exist
+if [ ! -f "$SCRIPT_DIR/.env" ]; then
+    echo "⚙️  Creating environment configuration file..."
+    cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
+    echo "📝 Please edit .env with your configuration"
 fi
 
 echo ""
 echo "✅ Setup complete!"
 echo ""
 echo "📋 Next steps:"
-echo "1. Edit family_league_config.json with your family's Duolingo usernames"
+echo "1. Edit .env with your family's Duolingo usernames (DUOLINGO_USERNAMES)"
 echo "2. Set up Gmail App Password and update email settings"
 echo "3. Test the system:"
 echo "   python3 duolingo_family_league.py"
