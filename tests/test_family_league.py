@@ -14,8 +14,8 @@ import tempfile
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.config import load_config, get_email_config
-from src.duolingo_api import get_user_progress, check_all_family, get_language_code
+from src.config import load_config, get_email_config, validate_username, validate_email
+from src.duolingo_api import get_user_progress, check_all_family
 from src.data_storage import DataStorage
 from src.report_generator import generate_leaderboard, generate_daily_report, generate_weekly_report
 from src.email_sender import send_email
@@ -83,10 +83,11 @@ class TestConfiguration:
         assert test_config['email_settings']['send_daily'] == False
     
     def test_missing_usernames(self):
-        """Test that config returns None when usernames are missing"""
+        """Test that config returns empty family_members when usernames are missing"""
         os.environ.pop('DUOLINGO_USERNAMES', None)
         config = load_config()
-        assert config is None
+        assert config is not None
+        assert config['family_members'] == {}
     
     def test_email_config_extraction(self, test_config):
         """Test email configuration extraction"""
@@ -96,36 +97,83 @@ class TestConfiguration:
         assert email_config['sender_email'] == 'sender@test.com'
         assert email_config['sender_password'] == 'test_password'
         assert email_config['family_email_list'] == ['family@test.com']
+    
+    def test_username_validation(self):
+        """Test username validation"""
+        # Valid usernames
+        assert validate_username('test_user') == True
+        assert validate_username('test.user') == True
+        assert validate_username('test-user') == True
+        assert validate_username('test_123') == True
+        
+        # Invalid usernames
+        with pytest.raises(ValueError):
+            validate_username('')  # Empty
+        with pytest.raises(ValueError):
+            validate_username('ab')  # Too short
+        with pytest.raises(ValueError):
+            validate_username('a' * 31)  # Too long
+        with pytest.raises(ValueError):
+            validate_username('test@user')  # Invalid character
+        with pytest.raises(ValueError):
+            validate_username('test user')  # Space not allowed
+    
+    def test_email_validation(self):
+        """Test email validation"""
+        # Valid emails
+        assert validate_email('test@example.com') == True
+        assert validate_email('user.name@domain.co.uk') == True
+        assert validate_email('test+tag@example.org') == True
+        
+        # Invalid emails
+        assert validate_email('') == False
+        assert validate_email('invalid') == False
+        assert validate_email('@example.com') == False
+        assert validate_email('test@') == False
+        assert validate_email('test@.com') == False
 
 
 class TestDuolingoIntegration:
     """Test Duolingo API integration"""
     
-    def test_language_code_conversion(self):
-        """Test language name to code conversion"""
-        assert get_language_code('Spanish') == 'es'
-        assert get_language_code('French') == 'fr'
-        assert get_language_code('Hungarian') == 'hu'
-        assert get_language_code('Unknown') == 'unknown'
     
-    @patch('src.duolingo_api.duolingo.Duolingo')
-    def test_get_user_progress_success(self, mock_duolingo):
+    @patch('src.duolingo_api.requests.get')
+    def test_get_user_progress_success(self, mock_get):
         """Test successful user progress retrieval"""
-        mock_lingo = Mock()
-        mock_duolingo.return_value = mock_lingo
-        
-        mock_lingo.get_user_info.return_value = {
-            'site_streak': 5,
-            'total_xp': 10000
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            'users': [{
+                'name': 'Test User',
+                'totalXp': 10000,
+                'streakData': {
+                    'currentStreak': {'length': 5}
+                },
+                'courses': [
+                    {
+                        'title': 'Spanish',
+                        'xp': 5000,
+                        'crowns': 10,
+                        'fromLanguage': 'en',
+                        'learningLanguage': 'es'
+                    },
+                    {
+                        'title': 'French', 
+                        'xp': 3000,
+                        'crowns': 8,
+                        'fromLanguage': 'en',
+                        'learningLanguage': 'fr'
+                    }
+                ],
+                'hasPlus': True
+            }]
         }
-        mock_lingo.get_languages.return_value = [
-            {'language': 'es', 'language_string': 'Spanish', 'points': 5000, 'level': 10},
-            {'language': 'fr', 'language_string': 'French', 'points': 3000, 'level': 8}
-        ]
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
         
         progress = get_user_progress('test_user')
         
         assert progress['username'] == 'test_user'
+        assert progress['name'] == 'Test User'
         assert progress['streak'] == 5
         assert progress['total_xp'] == 10000
         assert 'Spanish' in progress['language_progress']
@@ -134,11 +182,12 @@ class TestDuolingoIntegration:
         assert progress['profile_public'] == True
         assert 'Spanish' in progress['active_languages']
         assert 'French' in progress['active_languages']
+        assert progress['has_plus'] == True
     
-    @patch('src.duolingo_api.duolingo.Duolingo')
-    def test_get_user_progress_error(self, mock_duolingo):
+    @patch('src.duolingo_api.requests.get')
+    def test_get_user_progress_error(self, mock_get):
         """Test error handling in user progress retrieval"""
-        mock_duolingo.side_effect = Exception("API Error")
+        mock_get.side_effect = Exception("API Error")
         
         progress = get_user_progress('test_user')
         

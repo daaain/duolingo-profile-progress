@@ -1,7 +1,68 @@
 """Duolingo API integration for fetching user progress"""
 
 import requests
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
+
+
+def make_api_request_with_retry(url, headers, max_retries=3, base_delay=1):
+    """Make API request with exponential backoff retry logic"""
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            return response
+            
+        except requests.exceptions.RequestException as e:
+            if attempt == max_retries - 1:
+                # Last attempt failed, re-raise the exception
+                raise e
+            
+            # Calculate delay with exponential backoff
+            delay = base_delay * (2 ** attempt)
+            print(f"⚠️ API request failed (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            print(f"   Retrying in {delay} seconds...")
+            time.sleep(delay)
+    
+    # This should never be reached, but just in case
+    raise requests.exceptions.RequestException("Max retries exceeded")
+
+
+def calculate_weekly_xp(username, current_total_xp):
+    """Calculate weekly XP from historical data"""
+    try:
+        from .data_storage import DataStorage
+        storage = DataStorage()
+        history = storage.load_history()
+        
+        if not history:
+            return 0
+            
+        # Find XP from 7 days ago
+        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        week_ago_xp = None
+        
+        # Look for the closest date to 7 days ago
+        for entry in reversed(history):
+            if entry.get('date') <= week_ago:
+                user_results = entry.get('results', {})
+                for user_key, user_data in user_results.items():
+                    if (user_data.get('username', '').lower() == username.lower() or 
+                        user_key.lower().replace(' ', '_') == username.lower()):
+                        week_ago_xp = user_data.get('total_xp', 0)
+                        break
+                if week_ago_xp is not None:
+                    break
+        
+        if week_ago_xp is not None:
+            weekly_xp = max(0, current_total_xp - week_ago_xp)
+            return weekly_xp
+        
+        return 0
+        
+    except Exception:
+        # If we can't calculate weekly XP (e.g., no history), return 0
+        return 0
 
 
 def get_user_progress(username):
@@ -22,8 +83,7 @@ def get_user_progress(username):
             'Sec-Fetch-Site': 'same-origin'
         }
         
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
+        response = make_api_request_with_retry(url, headers)
         
         data = response.json()
         users = data.get('users', [])
@@ -70,7 +130,7 @@ def get_user_progress(username):
             'name': user.get('name', username),
             'streak': streak,
             'total_xp': user.get('totalXp', 0),
-            'weekly_xp': 0,  # Will need to be calculated from stored data
+            'weekly_xp': calculate_weekly_xp(username, user.get('totalXp', 0)),
             'total_languages_xp': total_languages_xp,
             'active_languages': active_languages,
             'language_progress': language_progress,
