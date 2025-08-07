@@ -1,0 +1,29 @@
+[project]
+name = "duolingo-family-league"
+version = "0.1.0"
+description = "Track Duolingo language learning progress for families"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["requests>=2.31.0", "python-dotenv>=1.0.0"]
+
+[project.optional-dependencies]
+dev = [
+    "pyright>=1.1.403",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.12.8",
+    "ty>=0.0.1a17",
+]
+
+[project.scripts]
+duolingo-family-league = "duolingo_family_league:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

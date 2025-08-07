@@ -1,0 +1,172 @@
+[
+  {
+    "date": "2025-08-06",
+    "timestamp": "2025-08-06T23:24:59.323704",
+    "results": {
+      "daaain": {
+        "username": "daaain",
+        "name": "Daniel",
+        "streak": 288,
+        "total_xp": 181289,
+        "weekly_xp": 0,
+        "total_languages_xp": 181289,
+        "active_languages": [
+          "Spanish",
+          "French"
+        ],
+        "language_progress": {
+          "Spanish": {
+            "level": 9999,
+            "xp": 180932,
+            "from_language": "en",
+            "learning_language": "es"
+          },
+          "French": {
+            "level": 9999,
+            "xp": 357,
+            "from_language": "en",
+            "learning_language": "fr"
+          }
+        },
+        "last_check": "2025-08-06 23:24:58",
+        "profile_public": true,
+        "has_plus": true
+      },
+      "CheezeGamer": {
+        "username": "CheezeGamer",
+        "name": "CheezeGamer",
+        "streak": 204,
+        "total_xp": 26017,
+        "weekly_xp": 0,
+        "total_languages_xp": 26017,
+        "active_languages": [
+          "German",
+          "Spanish",
+          "Hungarian",
+          "Japanese",
+          "Chinese"
+        ],
+        "language_progress": {
+          "German": {
+            "level": 9999,
+            "xp": 14117,
+            "from_language": "en",
+            "learning_language": "de"
+          },
+          "Spanish": {
+            "level": 9999,
+            "xp": 9500,
+            "from_language": "en",
+            "learning_language": "es"
+          },
+          "Hungarian": {
+            "level": 9999,
+            "xp": 1409,
+            "from_language": "en",
+            "learning_language": "hu"
+          },
+          "Japanese": {
+            "level": 9999,
+            "xp": 677,
+            "from_language": "en",
+            "learning_language": "ja"
+          },
+          "Chinese": {
+            "level": 9999,
+            "xp": 314,
+            "from_language": "en",
+            "learning_language": "zh"
+          }
+        },
+        "last_check": "2025-08-06 23:24:59",
+        "profile_public": true,
+        "has_plus": true
+      }
+    }
+  },
+  {
+    "date": "2025-08-07",
+    "timestamp": "2025-08-07T22:08:30.110893",
+    "results": {
+      "daaain": {
+        "username": "daaain",
+        "name": "Daniel",
+        "streak": 289,
+        "total_xp": 181946,
+        "weekly_xp": 0,
+        "total_languages_xp": 181946,
+        "active_languages": [
+          "Spanish",
+          "French"
+        ],
+        "language_progress": {
+          "Spanish": {
+            "level": 9999,
+            "xp": 181589,
+            "from_language": "en",
+            "learning_language": "es"
+          },
+          "French": {
+            "level": 9999,
+            "xp": 357,
+            "from_language": "en",
+            "learning_language": "fr"
+          }
+        },
+        "last_check": "2025-08-07 22:08:29",
+        "profile_public": true,
+        "has_plus": true
+      },
+      "CheezeGamer": {
+        "username": "CheezeGamer",
+        "name": "CheezeGamer",
+        "streak": 205,
+        "total_xp": 26017,
+        "weekly_xp": 0,
+        "total_languages_xp": 26017,
+        "active_languages": [
+          "German",
+          "Spanish",
+          "Hungarian",
+          "Japanese",
+          "Chinese"
+        ],
+        "language_progress": {
+          "German": {
+            "level": 9999,
+            "xp": 14117,
+            "from_language": "en",
+            "learning_language": "de"
+          },
+          "Spanish": {
+            "level": 9999,
+            "xp": 9500,
+            "from_language": "en",
+            "learning_language": "es"
+          },
+          "Hungarian": {
+            "level": 9999,
+            "xp": 1409,
+            "from_language": "en",
+            "learning_language": "hu"
+          },
+          "Japanese": {
+            "level": 9999,
+            "xp": 677,
+            "from_language": "en",
+            "learning_language": "ja"
+          },
+          "Chinese": {
+            "level": 9999,
+            "xp": 314,
+            "from_language": "en",
+            "learning_language": "zh"
+          }
+        },
+        "last_check": "2025-08-07 22:08:30",
+        "profile_public": true,
+        "has_plus": true
+      }
+    }
+  }
+]

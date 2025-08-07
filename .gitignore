@@ -61,3 +61,7 @@ Icon?
 Network Trash Folder
 Temporary Items
 .apdisk
+league_data
+daily_report_*.txt
+com.duolingo.familyleague.plist
+.env

@@ -1,260 +1,236 @@
-# Duolingo Family League Progress Tracker
+# Duolingo Family League Tracker
 
-A comprehensive Python-based system to monitor your family's Duolingo language learning progress, generate weekly leaderboards, and send automated email reports with pocket money tracking.
+Track your family's Duolingo language learning progress with automated daily and weekly reports.
 
-## 🌟 Features
+## Features
 
-- **Multi-language tracking** - Monitor progress across any Duolingo language
-- **Family leaderboard** - Weekly rankings based on streaks and XP
-- **Automated email reports** - Weekly progress summaries sent every Monday
-- **Pocket money tracking** - Automatic eligibility calculation for specified languages
-- **Robust scheduling** - Works even if your Mac was asleep during scheduled time
-- **Historical data** - Track progress trends over time
-- **Public profile support** - No authentication required, uses public Duolingo data
+- **Multi-language tracking**: Monitor progress across multiple languages for each family member
+- **Daily & Weekly Reports**: Get automated email reports with leaderboards and progress updates
+- **Streak tracking**: Monitor and celebrate streak achievements
+- **Goal setting**: Set weekly XP and streak goals for motivation
+- **Data persistence**: Automatically saves daily progress data for historical tracking
+- **Secure configuration**: Use environment variables for sensitive credentials
+- **Modular architecture**: Clean separation of concerns for easy maintenance
 
-## 📋 Requirements
+## Installation
 
-- Python 3.6+
-- macOS (for automation setup)
-- Public Duolingo profiles for all family members
-- Gmail account (for email reports)
+## Configuration
 
-## 🚀 Quick Start
+### 1. Environment Variables
 
-### 1. Install Dependencies
+Copy the example environment file:
 
 ```bash
-cd ~/workspace/duolingo-profile-progress
-pip3 install -r requirements.txt
+cp .env.example .env
 ```
 
-### 2. Configure Your Family
-
-Copy the example config and customize it:
+Edit `.env` with your configuration:
 
 ```bash
-cp family_league_config.json.example family_league_config.json
+# Duolingo Usernames (comma-separated list)
+# Note: Profiles must be public for the API to access them
+DUOLINGO_USERNAMES=dad_username,mom_username,alice_username
+
+# Goals Configuration
+WEEKLY_XP_GOAL=500
+STREAK_GOAL=7
+
+# Email Configuration
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SENDER_EMAIL=your_email@gmail.com
+SENDER_PASSWORD=your_app_password
+FAMILY_EMAIL_LIST=family1@example.com,family2@example.com
+SEND_DAILY=false
+SEND_WEEKLY=true
 ```
 
-Edit `family_league_config.json` with your family's information:
+**Note**: For Gmail, you'll need to generate an [App Password](https://support.google.com/accounts/answer/185833).
 
-```json
-{
-  "family_members": {
-    "Alice": {
-      "username": "alice_duolingo_username",
-      "languages": ["Hungarian", "German"],
-      "email": "alice@example.com"
-    },
-    "Bob": {
-      "username": "bob_duolingo_username", 
-      "languages": ["Hungarian"],
-      "email": "bob@example.com"
-    }
-  },
-  "email_settings": {
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 587,
-    "sender_email": "your_email@gmail.com",
-    "sender_password": "your_gmail_app_password",
-    "family_email_list": ["family@example.com"]
-  },
-  "league_settings": {
-    "weekly_xp_goal": 500,
-    "streak_goal": 7,
-    "pocket_money_languages": ["Hungarian"],
-    "pocket_money_amount": 5
-  }
-}
-```
+## Usage
 
-### 3. Set Up Gmail App Password
-
-1. Enable 2-factor authentication on your Gmail account
-2. Go to Google Account → Security → App passwords
-3. Generate an app password for "Mail"
-4. Use this password in your config file (not your regular Gmail password)
-
-### 4. Test the System
+### Check Current Status
 
 ```bash
-# Test basic functionality
-python3 duolingo_family_league.py
-
-# Test email sending
-python3 duolingo_family_league.py --weekly-email
+python duolingo_family_league.py
 ```
 
-## 🤖 Automation Setup
+### Daily Report
 
-Choose one of these methods to automatically send weekly reports every Monday:
+Save daily data and optionally send email:
 
-### Option 1: LaunchAgent (Recommended)
+```bash
+# Save data only
+python duolingo_family_league.py --daily
 
-This method is most reliable and works even if your Mac was sleeping:
+# Save data and send email
+python duolingo_family_league.py --daily --send-email
+```
 
-1. **Install the LaunchAgent:**
+### Weekly Report
+
+Generate comprehensive weekly report:
+
+```bash
+# Display and save report
+python duolingo_family_league.py --weekly
+
+# Also send via email
+python duolingo_family_league.py --weekly --send-email
+```
+
+### Automation with Cron
+
+Add to your crontab for automatic daily and weekly reports:
+
+```bash
+# Daily check at 8 PM
+0 20 * * * cd /path/to/duolingo-family-league && python duolingo_family_league.py --daily
+
+# Weekly report on Sundays at 9 PM
+0 21 * * 0 cd /path/to/duolingo-family-league && python duolingo_family_league.py --weekly --send-email
+```
+
+### macOS LaunchAgent (Recommended for Mac users)
+
+The project includes a LaunchAgent configuration for reliable scheduling:
+
+1. Update the username in the plist file:
 
    ```bash
-   # First, update the username in the plist file
    sed -i '' 's/YOUR_USERNAME/'"$USER"'/g' com.duolingo.familyleague.plist
-   
-   # Make scripts executable
-   chmod +x duolingo_wrapper.sh duolingo_cron.sh
-   
-   # Copy to LaunchAgents directory
+   ```
+
+2. Install the LaunchAgent:
+
+   ```bash
    cp com.duolingo.familyleague.plist ~/Library/LaunchAgents/
-   
-   # Load the agent
    launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
    ```
 
-2. **Verify it's loaded:**
+## Data Storage
 
-   ```bash
-   launchctl list | grep duolingo
-   ```
+- Daily snapshots are saved in `league_data/daily_YYYY-MM-DD.json`
+- Master history file at `league_data/league_history.json` (last 90 days)
+- Reports are saved as `daily_report_YYYYMMDD.txt` and `weekly_report_YYYYMMDD.txt`
 
-### Option 2: Cron with Catch-up
+## Report Examples
 
-```bash
-# Make script executable
-chmod +x duolingo_cron.sh
+### Daily Report
 
-# Edit crontab
-crontab -e
+```sh
+📊 DUOLINGO FAMILY LEAGUE - DAILY UPDATE
+=============================================
+Date: 2025-08-05
 
-# Add this line (runs Monday 9 AM and every hour until 6 PM as catch-up)
-0 9-18 * * 1 /Users/$USER/workspace/duolingo-profile-progress/duolingo_cron.sh
+🏆 Today's Standings:
+🥇 Alice: 12 day streak | 650 weekly XP
+🥈 Bob: 8 day streak | 420 weekly XP
+
+⚠️ Streak Alerts:
+  ✅ Everyone is maintaining their streaks!
+
+Keep learning! 🌟
 ```
 
-### Option 3: Automator + Calendar
+### Weekly Report
 
-1. Open **Automator** → New → **Application**
-2. Add **Run Shell Script** action
-3. Set script to:
-
-   ```bash
-   cd /Users/$USER/workspace/duolingo-profile-progress
-   /usr/bin/python3 duolingo_family_league.py --weekly-email
-   ```
-
-4. Save as "Duolingo Family League.app"
-5. In **Calendar**, create weekly Monday event with alert to open this app
-
-## 📊 Output Examples
-
-### Weekly Report Email
-
-```
+```sh
 🏆 DUOLINGO FAMILY LEAGUE - WEEKLY REPORT
-========================================================
-Week ending: 2025-08-08
-Generated: 2025-08-08 09:00:15
+=======================================================
+Week ending: 2025-08-05
 
 🥇 FAMILY LEADERBOARD
 -------------------------
 🥇 Alice
     Streak: 12 days | Weekly XP: 650 | Total XP: 15,420
-🥈 Bob  
+🥈 Bob
     Streak: 8 days | Weekly XP: 420 | Total XP: 8,240
 
 📊 DETAILED PROGRESS
 ----------------------
-
 👤 Alice (alice_duolingo)
    Current streak: 12 days
    🔥 STREAK GOAL ACHIEVED!
    🎯 WEEKLY XP GOAL ACHIEVED! (650/500)
    📚 Language Progress:
-      Hungarian: Level 8 | 3,240 XP
-      German: Level 5 | 1,180 XP
-   💰 POCKET MONEY ELIGIBLE: $5 (Hungarian)
+      German: Level 8 | 3,240 XP
+      Japanese: Level 5 | 1,180 XP
 ```
 
-## 🔧 Configuration Options
+## Supported Languages
 
-### Family Members
+Spanish, French, German, Italian, Portuguese, Dutch, Russian, Japanese, Korean, Chinese, Arabic, Hindi, Turkish, Polish, Norwegian, Swedish, Danish, Finnish, Czech, Hungarian, Romanian, Ukrainian, Greek, Hebrew, Vietnamese, Thai, Indonesian, Swahili, and more.
 
-- `username`: Duolingo username (must be public profile)
-- `languages`: List of languages to track
-- `email`: Individual email address
+## Requirements
 
-### Email Settings
+- Python 3.8+
+- Public Duolingo profiles for all family members (required for API access)
+- SMTP email server access (Gmail, Outlook, etc.) for email reports
 
-- Gmail SMTP configuration
-- Family distribution list
-- App password authentication
+## Troubleshooting
 
-### League Settings
+### Profile Not Found
 
-- `weekly_xp_goal`: Target XP per week
-- `streak_goal`: Target daily streak
-- `pocket_money_languages`: Languages eligible for rewards
-- `pocket_money_amount`: Reward amount per eligible language
+Ensure the Duolingo profile is public and the username is correct.
 
-## 📁 Generated Files
+### Email Not Sending
 
-- `family_league_history.json` - Historical progress data
-- `family_league_report_YYYYMMDD.txt` - Daily report files
-- `duolingo_last_run.log` - Execution logs
-- `duolingo_error.log` - Error logs
+1. Check SMTP credentials in environment variables
+2. For Gmail, ensure you're using an App Password, not your regular password
+3. Check firewall/network settings for SMTP port access
 
-## 🛠️ Troubleshooting
+### Missing Data
 
-### Email Issues
+- The public API doesn't provide exact weekly XP. The tool calculates this from stored daily snapshots.
+- For accurate weekly XP tracking, ensure the script runs daily to capture progress changes.
+- Historical data is stored in `league_data/` for trend analysis.
 
-- Verify Gmail App Password is correct
-- Check SMTP settings match your email provider
-- Ensure 2FA is enabled on Gmail
+## Development
 
-### Profile Access Issues
-
-- Confirm Duolingo usernames are correct
-- Verify profiles are set to public
-- Check if users have started the specified languages
-
-### Automation Issues
+### Dependencies
 
 ```bash
-# Check LaunchAgent status
-launchctl list | grep duolingo
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# View logs
-tail -f duolingo_league.log
-tail -f duolingo_league_error.log
-
-# Reload LaunchAgent if needed
-launchctl unload ~/Library/LaunchAgents/com.duolingo.familyleague.plist
-launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
+# Install dependencies
+uv sync --all-extras
 ```
 
-### macOS Permissions
+## Project Structure
 
-You may need to grant permissions in:
-**System Preferences → Privacy & Security → Full Disk Access**
+```text
+.
+├── duolingo_family_league.py   # Main entry point
+├── src/
+│   ├── config.py               # Configuration management
+│   ├── duolingo_api.py         # Duolingo API integration
+│   ├── data_storage.py         # Data persistence
+│   ├── email_sender.py         # Email functionality
+│   └── report_generator.py     # Report generation
+├── tests/
+│   └── test_family_league.py   # Pytest test suite
+├── league_data/                # Historical data (created automatically)
+└── pyproject.toml              # Project dependencies
+```
 
-## 🎯 Supported Languages
+## Testing
 
-The system supports all major Duolingo languages:
+Run the test suite:
 
-- European: Spanish, French, German, Italian, Portuguese, Dutch, Russian, Polish, Norwegian, Swedish, Danish, Finnish, Czech, Hungarian, Romanian, Ukrainian, Greek
-- Asian: Japanese, Korean, Chinese, Hindi, Vietnamese, Thai, Indonesian
-- Others: Arabic, Hebrew, Turkish, Swahili
+```sh
+pytest tests/ -v
+```
 
-## 🤝 Contributing
+### Linting
 
-Feel free to submit issues and enhancement requests!
+```sh
+ruff check --fix
+ty check
+pyright
+```
 
-## 📄 License
+## License
 
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🔗 Related
-
-- [Duolingo Python Library](https://github.com/KartikTalwar/Duolingo) - Unofficial API wrapper
-- [Duolingo](https://www.duolingo.com/) - Language learning platform
-
----
-
-**Happy learning!** 🦉📚
+MIT
