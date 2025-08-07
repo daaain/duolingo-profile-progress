@@ -8,12 +8,11 @@ dependencies = ["requests>=2.31.0", "python-dotenv>=1.0.0"]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.4.0", 
-    "pytest-cov>=4.1.0", 
-    "python-dotenv>=1.0.0",
-    "black>=23.0.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0"
+    "pyright>=1.1.403",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.12.8",
+    "ty>=0.0.1a17",
 ]
 
 [project.scripts]

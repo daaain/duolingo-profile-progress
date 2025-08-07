@@ -26,7 +26,7 @@ sed -i '' "s/YOUR_USERNAME/$USERNAME/g" "$SCRIPT_DIR/com.duolingo.familyleague.p
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
-uv sync
+uv sync --all-extras
 
 # Create .env file if it doesn't exist
 if [ ! -f "$SCRIPT_DIR/.env" ]; then

@@ -14,16 +14,6 @@ Track your family's Duolingo language learning progress with automated daily and
 
 ## Installation
 
-### Using uv
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install dependencies
-uv sync --all-groups --dev
-```
-
 ## Configuration
 
 ### 1. Environment Variables
@@ -118,31 +108,6 @@ The project includes a LaunchAgent configuration for reliable scheduling:
    launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
    ```
 
-## Project Structure
-
-```text
-.
-├── duolingo_family_league.py   # Main entry point
-├── src/
-│   ├── config.py               # Configuration management
-│   ├── duolingo_api.py         # Duolingo API integration
-│   ├── data_storage.py         # Data persistence
-│   ├── email_sender.py         # Email functionality
-│   └── report_generator.py     # Report generation
-├── tests/
-│   └── test_family_league.py   # Pytest test suite
-├── league_data/                # Historical data (created automatically)
-└── pyproject.toml              # Project dependencies
-```
-
-## Testing
-
-Run the test suite:
-
-```bash
-pytest tests/ -v
-```
-
 ## Data Storage
 
 - Daily snapshots are saved in `league_data/daily_YYYY-MM-DD.json`
@@ -220,6 +185,51 @@ Ensure the Duolingo profile is public and the username is correct.
 - The public API doesn't provide exact weekly XP. The tool calculates this from stored daily snapshots.
 - For accurate weekly XP tracking, ensure the script runs daily to capture progress changes.
 - Historical data is stored in `league_data/` for trend analysis.
+
+## Development
+
+### Dependencies
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync --all-extras
+```
+
+## Project Structure
+
+```text
+.
+├── duolingo_family_league.py   # Main entry point
+├── src/
+│   ├── config.py               # Configuration management
+│   ├── duolingo_api.py         # Duolingo API integration
+│   ├── data_storage.py         # Data persistence
+│   ├── email_sender.py         # Email functionality
+│   └── report_generator.py     # Report generation
+├── tests/
+│   └── test_family_league.py   # Pytest test suite
+├── league_data/                # Historical data (created automatically)
+└── pyproject.toml              # Project dependencies
+```
+
+## Testing
+
+Run the test suite:
+
+```sh
+pytest tests/ -v
+```
+
+### Linting
+
+```sh
+ruff check --fix
+ty check
+pyright
+```
 
 ## License
 
