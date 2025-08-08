@@ -50,8 +50,8 @@ class DataStorage:
         history = [h for h in history if h.get("date") != today]
         history.append(entry)
 
-        # Keep only last 90 days of history
-        history = sorted(history, key=lambda x: x["date"])[-90:]
+        # Sort history by date
+        history = sorted(history, key=lambda x: x["date"])
 
         with open(history_file, "w") as f:
             json.dump(history, f, indent=2)

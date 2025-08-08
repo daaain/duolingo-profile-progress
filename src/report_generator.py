@@ -44,8 +44,13 @@ def generate_daily_report(results):
     report.append("🏆 Today's Standings:")
     for i, member in enumerate(leaderboard[:3], 1):
         emoji = ["🥇", "🥈", "🥉"][i - 1] if i <= 3 else f"{i}."
+        weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
+        active_langs = [
+            f"{lang} +{xp}" for lang, xp in weekly_xp_per_lang.items() if xp > 0
+        ]
+        lang_info = f" ({', '.join(active_langs)})" if active_langs else ""
         report.append(
-            f"{emoji} {member['name']}: {member['streak']} day streak | {member['weekly_xp']} weekly XP"
+            f"{emoji} {member['name']}: {member['streak']} day streak | {member['weekly_xp']} weekly XP{lang_info}"
         )
 
     report.append("")
@@ -134,11 +139,18 @@ def generate_weekly_report(results, goals):
         # Language-specific progress
         if data.get("language_progress"):
             report.append("   📚 Language Progress:")
+            weekly_xp_per_lang = data.get("weekly_xp_per_language", {})
             for lang, progress in data["language_progress"].items():
                 if progress["xp"] > 0:
-                    report.append(
-                        f"      {lang}: Level {progress['level']} | {progress['xp']:,} XP"
-                    )
+                    weekly_lang_xp = weekly_xp_per_lang.get(lang, 0)
+                    if weekly_lang_xp > 0:
+                        report.append(
+                            f"      {lang}: Level {progress['level']} | {progress['xp']:,} XP (+{weekly_lang_xp} this week)"
+                        )
+                    else:
+                        report.append(
+                            f"      {lang}: Level {progress['level']} | {progress['xp']:,} XP"
+                        )
                 else:
                     report.append(f"      {lang}: Not started yet")
         elif data.get("active_languages"):

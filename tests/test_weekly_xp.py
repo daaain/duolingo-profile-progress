@@ -1,0 +1,398 @@
+"""Tests for weekly XP calculation functionality"""
+
+from datetime import datetime, timedelta
+from unittest.mock import patch
+
+import pytest
+
+from src.duolingo_api import calculate_weekly_xp, calculate_weekly_xp_per_language
+
+
+class TestWeeklyXPCalculation:
+    """Test weekly XP calculation logic"""
+
+    @pytest.fixture
+    def mock_storage(self):
+        """Mock DataStorage for testing"""
+        with patch("src.data_storage.DataStorage") as MockStorage:
+            yield MockStorage.return_value
+
+    def test_weekly_xp_no_history(self, mock_storage):
+        """Test weekly XP when no history exists"""
+        mock_storage.load_history.return_value = []
+
+        result = calculate_weekly_xp("testuser", 1000)
+
+        assert result == 0
+
+    def test_weekly_xp_with_previous_week_data(self, mock_storage):
+        """Test weekly XP calculation with data from previous week"""
+        today = datetime.now()
+        last_sunday = today - timedelta(days=today.weekday() + 1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": last_sunday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 5000}},
+            }
+        ]
+
+        result = calculate_weekly_xp("testuser", 5500)
+
+        assert result == 500
+
+    def test_weekly_xp_current_week_only(self, mock_storage):
+        """Test weekly XP when only current week data exists"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 3000}},
+            },
+            {
+                "date": today.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 3200}},
+            },
+        ]
+
+        result = calculate_weekly_xp("testuser", 3200)
+
+        assert result == 200
+
+    def test_weekly_xp_first_day_of_week(self, mock_storage):
+        """Test weekly XP on first day with no prior data"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 1000}},
+            }
+        ]
+
+        # Same XP as recorded = no progress yet
+        result = calculate_weekly_xp("testuser", 1000)
+
+        assert result == 0
+
+    def test_weekly_xp_case_insensitive_username(self, mock_storage):
+        """Test that username matching is case-insensitive"""
+        today = datetime.now()
+        last_week = today - timedelta(days=7)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": last_week.strftime("%Y-%m-%d"),
+                "results": {"TestUser": {"username": "TestUser", "total_xp": 2000}},
+            }
+        ]
+
+        result = calculate_weekly_xp("testuser", 2500)
+
+        assert result == 500
+
+    def test_weekly_xp_username_with_spaces(self, mock_storage):
+        """Test username matching with spaces converted to underscores"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {"test user": {"username": "test_user", "total_xp": 1500}},
+            }
+        ]
+
+        result = calculate_weekly_xp("test_user", 1700)
+
+        assert result == 200
+
+    def test_weekly_xp_mixed_week_data(self, mock_storage):
+        """Test with data from both current and previous weeks"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+        last_week = monday - timedelta(days=3)
+        yesterday = today - timedelta(days=1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": last_week.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 4000}},
+            },
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 4100}},
+            },
+            {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 4300}},
+            },
+        ]
+
+        # Should use last week's Sunday data as baseline
+        result = calculate_weekly_xp("testuser", 4500)
+
+        assert result == 500  # 4500 - 4000
+
+    def test_weekly_xp_user_not_found(self, mock_storage):
+        """Test when user is not in history"""
+        today = datetime.now()
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": today.strftime("%Y-%m-%d"),
+                "results": {"otheruser": {"username": "otheruser", "total_xp": 1000}},
+            }
+        ]
+
+        result = calculate_weekly_xp("testuser", 5000)
+
+        assert result == 0
+
+    def test_weekly_xp_negative_protection(self, mock_storage):
+        """Test that weekly XP never goes negative"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 5000}},
+            }
+        ]
+
+        # Current XP less than historical (shouldn't happen but test protection)
+        result = calculate_weekly_xp("testuser", 4000)
+
+        assert result == 0  # max(0, 4000 - 5000) = 0
+
+    def test_weekly_xp_exception_handling(self, mock_storage):
+        """Test exception handling in weekly XP calculation"""
+        mock_storage.load_history.side_effect = Exception("Database error")
+
+        result = calculate_weekly_xp("testuser", 1000)
+
+        assert result == 0
+
+    def test_weekly_xp_with_actual_data_structure(self, mock_storage):
+        """Test with actual data structure from the application"""
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "timestamp": yesterday.isoformat(),
+                "results": {
+                    "daaain": {
+                        "username": "daaain",
+                        "name": "Daniel",
+                        "streak": 288,
+                        "total_xp": 181289,
+                        "weekly_xp": 0,
+                        "total_languages_xp": 181289,
+                        "active_languages": ["Spanish", "French"],
+                        "language_progress": {
+                            "Spanish": {
+                                "level": 9999,
+                                "xp": 180932,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            }
+                        },
+                    }
+                },
+            },
+            {
+                "date": today.strftime("%Y-%m-%d"),
+                "timestamp": today.isoformat(),
+                "results": {
+                    "daaain": {
+                        "username": "daaain",
+                        "name": "Daniel",
+                        "streak": 289,
+                        "total_xp": 181946,
+                        "weekly_xp": 0,
+                        "total_languages_xp": 181946,
+                        "active_languages": ["Spanish", "French"],
+                        "language_progress": {
+                            "Spanish": {
+                                "level": 9999,
+                                "xp": 181589,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            }
+                        },
+                    }
+                },
+            },
+        ]
+
+        result = calculate_weekly_xp("daaain", 181946)
+
+        assert result == 657  # 181946 - 181289
+
+
+class TestWeeklyXPPerLanguage:
+    """Test per-language weekly XP calculation"""
+
+    @pytest.fixture
+    def mock_storage(self):
+        """Mock DataStorage for testing"""
+        with patch("src.data_storage.DataStorage") as MockStorage:
+            yield MockStorage.return_value
+
+    def test_weekly_xp_per_language_no_history(self, mock_storage):
+        """Test weekly XP per language when no history exists"""
+        mock_storage.load_history.return_value = []
+
+        current_languages = {
+            "Spanish": {"xp": 5000, "level": 10},
+            "French": {"xp": 2000, "level": 5},
+        }
+
+        result = calculate_weekly_xp_per_language("testuser", current_languages)
+
+        assert result == {}
+
+    def test_weekly_xp_per_language_with_baseline(self, mock_storage):
+        """Test weekly XP per language with baseline data"""
+        today = datetime.now()
+        last_sunday = today - timedelta(days=today.weekday() + 1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": last_sunday.strftime("%Y-%m-%d"),
+                "results": {
+                    "testuser": {
+                        "username": "testuser",
+                        "language_progress": {
+                            "Spanish": {"xp": 4500, "level": 9},
+                            "French": {"xp": 1800, "level": 4},
+                        },
+                    }
+                },
+            }
+        ]
+
+        current_languages = {
+            "Spanish": {"xp": 5000, "level": 10},
+            "French": {"xp": 2000, "level": 5},
+        }
+
+        result = calculate_weekly_xp_per_language("testuser", current_languages)
+
+        assert result["Spanish"] == 500  # 5000 - 4500
+        assert result["French"] == 200  # 2000 - 1800
+
+    def test_weekly_xp_per_language_new_language(self, mock_storage):
+        """Test weekly XP when a new language is started this week"""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": monday.strftime("%Y-%m-%d"),
+                "results": {
+                    "testuser": {
+                        "username": "testuser",
+                        "language_progress": {"Spanish": {"xp": 4500, "level": 9}},
+                    }
+                },
+            }
+        ]
+
+        current_languages = {
+            "Spanish": {"xp": 5000, "level": 10},
+            "French": {"xp": 200, "level": 1},  # New language
+            "German": {"xp": 150, "level": 1},  # Another new language
+        }
+
+        result = calculate_weekly_xp_per_language("testuser", current_languages)
+
+        assert result["Spanish"] == 500  # 5000 - 4500
+        assert result["French"] == 200  # All XP is new
+        assert result["German"] == 150  # All XP is new
+
+    def test_weekly_xp_per_language_no_progress(self, mock_storage):
+        """Test when no progress was made in any language"""
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "results": {
+                    "testuser": {
+                        "username": "testuser",
+                        "language_progress": {
+                            "Spanish": {"xp": 5000, "level": 10},
+                            "French": {"xp": 2000, "level": 5},
+                        },
+                    }
+                },
+            }
+        ]
+
+        current_languages = {
+            "Spanish": {"xp": 5000, "level": 10},
+            "French": {"xp": 2000, "level": 5},
+        }
+
+        result = calculate_weekly_xp_per_language("testuser", current_languages)
+
+        assert result["Spanish"] == 0
+        assert result["French"] == 0
+
+    def test_weekly_xp_per_language_with_actual_data(self, mock_storage):
+        """Test with actual application data structure"""
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+
+        mock_storage.load_history.return_value = [
+            {
+                "date": yesterday.strftime("%Y-%m-%d"),
+                "results": {
+                    "daaain": {
+                        "username": "daaain",
+                        "language_progress": {
+                            "Spanish": {
+                                "level": 9999,
+                                "xp": 180932,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            },
+                            "French": {
+                                "level": 9999,
+                                "xp": 357,
+                                "from_language": "en",
+                                "learning_language": "fr",
+                            },
+                        },
+                    }
+                },
+            }
+        ]
+
+        current_languages = {
+            "Spanish": {
+                "level": 9999,
+                "xp": 181589,
+                "from_language": "en",
+                "learning_language": "es",
+            },
+            "French": {
+                "level": 9999,
+                "xp": 357,
+                "from_language": "en",
+                "learning_language": "fr",
+            },
+        }
+
+        result = calculate_weekly_xp_per_language("daaain", current_languages)
+
+        assert result["Spanish"] == 657  # 181589 - 180932
+        assert result["French"] == 0  # 357 - 357

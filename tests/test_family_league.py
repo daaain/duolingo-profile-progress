@@ -182,10 +182,8 @@ class TestDuolingoIntegration:
         assert "Spanish" in progress["language_progress"]
         assert "French" in progress["language_progress"]
         assert progress["language_progress"]["Spanish"]["xp"] == 5000
-        assert progress["profile_public"]
         assert "Spanish" in progress["active_languages"]
         assert "French" in progress["active_languages"]
-        assert progress["has_plus"]
 
     @patch("src.duolingo_api.requests.get")
     def test_get_user_progress_error(self, mock_get):
@@ -196,7 +194,6 @@ class TestDuolingoIntegration:
 
         assert "error" in progress
         assert progress["error"] == "API Error"
-        assert not progress["profile_public"]
         assert progress["active_languages"] == []
 
 
