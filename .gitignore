@@ -1,9 +1,5 @@
 # Logs and generated files
 *.log
-duolingo_*.log
-family_league_report_*.txt
-family_league_history.json
-.duolingo_weekly_lock
 
 # Configuration files (contains sensitive data)
 family_league_config.json
@@ -61,8 +57,9 @@ Icon?
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Project specific
 league_data
-daily_report_*.txt
 com.duolingo.familyleague.plist
 .env
 league_data
