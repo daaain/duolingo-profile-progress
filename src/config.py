@@ -2,13 +2,14 @@
 
 import os
 import re
+from typing import Any
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 
-def validate_username(username):
+def validate_username(username: str) -> bool:
     """Validate username format"""
     if not username:
         raise ValueError("Username cannot be empty")
@@ -28,7 +29,7 @@ def validate_username(username):
     return True
 
 
-def validate_email(email):
+def validate_email(email: str) -> bool:
     """Validate email format"""
     if not email:
         return False
@@ -38,7 +39,7 @@ def validate_email(email):
     return re.match(email_pattern, email) is not None
 
 
-def load_config():
+def load_config() -> dict[str, Any] | None:
     """Load family league configuration from environment variables"""
     # Parse usernames from comma-separated list (required)
     usernames_env = os.getenv("DUOLINGO_USERNAMES", "")
@@ -90,14 +91,14 @@ def load_config():
     }
 
 
-def get_email_config(config):
+def get_email_config(config: dict[str, Any] | None) -> dict[str, Any]:
     """Extract email configuration from config"""
     if not config:
         return {}
     return config.get("email_settings", {})
 
 
-def get_email_list():
+def get_email_list() -> list[str]:
     """Get email list from environment variable"""
     email_list_env = os.getenv("FAMILY_EMAIL_LIST", "")
     if email_list_env:
@@ -105,13 +106,13 @@ def get_email_list():
     return []
 
 
-def get_validated_email_list():
+def get_validated_email_list() -> list[str]:
     """Get email list with validation"""
     email_list_env = os.getenv("FAMILY_EMAIL_LIST", "")
     if not email_list_env:
         return []
 
-    validated_emails = []
+    validated_emails: list[str] = []
     for email in email_list_env.split(","):
         email = email.strip()
         if email:

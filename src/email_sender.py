@@ -4,9 +4,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from typing import Any
 
 
-def send_email(report, email_config, subject_prefix=""):
+def send_email(
+    report: str, email_config: dict[str, Any], subject_prefix: str = ""
+) -> bool:
     """Send report via email"""
     try:
         if not all(
@@ -48,11 +51,11 @@ def send_email(report, email_config, subject_prefix=""):
         return False
 
 
-def should_send_daily(email_config):
+def should_send_daily(email_config: dict[str, Any]) -> bool:
     """Check if daily emails are enabled"""
     return email_config.get("send_daily", False)
 
 
-def should_send_weekly(email_config):
+def should_send_weekly(email_config: dict[str, Any]) -> bool:
     """Check if weekly emails are enabled"""
     return email_config.get("send_weekly", True)

@@ -1,11 +1,12 @@
 """Report generation for Duolingo Family League"""
 
 from datetime import datetime
+from typing import Any
 
 
-def generate_leaderboard(results):
+def generate_leaderboard(results: dict[str, Any]) -> list[dict[str, Any]]:
     """Generate family leaderboard"""
-    leaderboard_data = []
+    leaderboard_data: list[dict[str, Any]] = []
 
     for member_name, data in results.items():
         if "error" not in data:
@@ -30,11 +31,11 @@ def generate_leaderboard(results):
     return leaderboard_data
 
 
-def generate_daily_report(results):
+def generate_daily_report(results: dict[str, Any]) -> str:
     """Generate a concise daily progress report"""
     leaderboard = generate_leaderboard(results)
 
-    report = []
+    report: list[str] = []
     report.append("📊 DUOLINGO FAMILY LEAGUE - DAILY UPDATE")
     report.append("=" * 45)
     report.append(f"Date: {datetime.now().strftime('%Y-%m-%d')}")
@@ -57,7 +58,7 @@ def generate_daily_report(results):
 
     # Streak warnings
     report.append("⚠️ Streak Alerts:")
-    alerts = []
+    alerts: list[str] = []
     for member_name, data in results.items():
         if "error" not in data and data["streak"] == 0:
             alerts.append(f"  • {member_name} needs to practice today!")
@@ -72,11 +73,11 @@ def generate_daily_report(results):
     return "\n".join(report)
 
 
-def generate_weekly_report(results, goals):
+def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> str:
     """Generate comprehensive weekly family report"""
     leaderboard = generate_leaderboard(results)
 
-    report = []
+    report: list[str] = []
     report.append("🏆 DUOLINGO FAMILY LEAGUE - WEEKLY REPORT")
     report.append("=" * 55)
     report.append(f"Week ending: {datetime.now().strftime('%Y-%m-%d')}")

@@ -4,9 +4,29 @@ import requests
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from typing import Any, Union
+
+try:
+    from .types import (
+        DuolingoApiResponse,
+        DuolingoUser,
+        UserProgress,
+        UserProgressError,
+        LanguageProgress,
+    )
+except ImportError:
+    from src.types import (
+        DuolingoApiResponse,
+        DuolingoUser,
+        UserProgress,
+        UserProgressError,
+        LanguageProgress,
+    )
 
 
-def make_api_request_with_retry(url, headers, max_retries=3, base_delay=1):
+def make_api_request_with_retry(
+    url: str, headers: dict[str, str], max_retries: int = 3, base_delay: int = 1
+) -> requests.Response:
     """Make API request with exponential backoff retry logic"""
     for attempt in range(max_retries):
         try:
@@ -31,7 +51,7 @@ def make_api_request_with_retry(url, headers, max_retries=3, base_delay=1):
     raise requests.RequestException("Max retries exceeded")
 
 
-def calculate_weekly_xp(username, current_total_xp):
+def calculate_weekly_xp(username: str, current_total_xp: int) -> int:
     """Calculate weekly XP from historical data (total across all languages)"""
     try:
         from .data_storage import DataStorage
@@ -53,7 +73,7 @@ def calculate_weekly_xp(username, current_total_xp):
 
         for entry in history:
             entry_date = entry.get("date")
-            if entry_date >= week_start:
+            if entry_date and entry_date >= week_start:
                 # This entry is from current week
                 user_results = entry.get("results", {})
                 for user_key, user_data in user_results.items():
@@ -61,16 +81,15 @@ def calculate_weekly_xp(username, current_total_xp):
                         user_data.get("username", "").lower() == username.lower()
                         or user_key.lower().replace(" ", "_") == username.lower()
                     ):
-                        if (
-                            earliest_this_week_xp is None
-                            or entry_date < earliest_this_week_xp[0]
+                        if earliest_this_week_xp is None or (
+                            entry_date and entry_date < earliest_this_week_xp[0]
                         ):
                             earliest_this_week_xp = (
                                 entry_date,
                                 user_data.get("total_xp", 0),
                             )
                         break
-            elif entry_date < week_start:
+            elif entry_date and entry_date < week_start:
                 # This is from before the week - use as baseline if it's the most recent
                 user_results = entry.get("results", {})
                 for user_key, user_data in user_results.items():
@@ -78,7 +97,9 @@ def calculate_weekly_xp(username, current_total_xp):
                         user_data.get("username", "").lower() == username.lower()
                         or user_key.lower().replace(" ", "_") == username.lower()
                     ):
-                        if week_start_xp is None or entry_date > week_start_xp[0]:
+                        if week_start_xp is None or (
+                            entry_date and entry_date > week_start_xp[0]
+                        ):
                             week_start_xp = (entry_date, user_data.get("total_xp", 0))
                         break
 
@@ -100,7 +121,9 @@ def calculate_weekly_xp(username, current_total_xp):
         return 0
 
 
-def calculate_weekly_xp_per_language(username, current_language_progress):
+def calculate_weekly_xp_per_language(
+    username: str, current_language_progress: dict[str, LanguageProgress]
+) -> dict[str, int]:
     """Calculate weekly XP per language from historical data"""
     try:
         from .data_storage import DataStorage
@@ -122,7 +145,7 @@ def calculate_weekly_xp_per_language(username, current_language_progress):
 
         for entry in history:
             entry_date = entry.get("date")
-            if entry_date >= week_start:
+            if entry_date and entry_date >= week_start:
                 # This entry is from current week
                 user_results = entry.get("results", {})
                 for user_key, user_data in user_results.items():
@@ -130,16 +153,15 @@ def calculate_weekly_xp_per_language(username, current_language_progress):
                         user_data.get("username", "").lower() == username.lower()
                         or user_key.lower().replace(" ", "_") == username.lower()
                     ):
-                        if (
-                            earliest_this_week_languages is None
-                            or entry_date < earliest_this_week_languages[0]
+                        if earliest_this_week_languages is None or (
+                            entry_date and entry_date < earliest_this_week_languages[0]
                         ):
                             earliest_this_week_languages = (
                                 entry_date,
                                 user_data.get("language_progress", {}),
                             )
                         break
-            elif entry_date < week_start:
+            elif entry_date and entry_date < week_start:
                 # This is from before the week - use as baseline if it's the most recent
                 user_results = entry.get("results", {})
                 for user_key, user_data in user_results.items():
@@ -147,9 +169,8 @@ def calculate_weekly_xp_per_language(username, current_language_progress):
                         user_data.get("username", "").lower() == username.lower()
                         or user_key.lower().replace(" ", "_") == username.lower()
                     ):
-                        if (
-                            week_start_languages is None
-                            or entry_date > week_start_languages[0]
+                        if week_start_languages is None or (
+                            entry_date and entry_date > week_start_languages[0]
                         ):
                             week_start_languages = (
                                 entry_date,
@@ -158,7 +179,7 @@ def calculate_weekly_xp_per_language(username, current_language_progress):
                         break
 
         # Calculate weekly XP per language
-        weekly_xp_per_language = {}
+        weekly_xp_per_language: dict[str, int] = {}
         baseline_languages = None
 
         if week_start_languages is not None:
@@ -188,7 +209,7 @@ def calculate_weekly_xp_per_language(username, current_language_progress):
         return {}
 
 
-def get_user_progress(username):
+def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
     """Get progress data for a specific user using the unauthenticated API"""
     try:
         # Use the unauthenticated API endpoint
@@ -208,25 +229,25 @@ def get_user_progress(username):
 
         response = make_api_request_with_retry(url, headers)
 
-        data = response.json()
+        data: DuolingoApiResponse = response.json()
         users = data.get("users", [])
 
         if not users:
-            return {
-                "username": username,
-                "error": "User not found",
-                "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "language_progress": {},
-                "weekly_xp_per_language": {},
-                "active_languages": [],
-            }
+            return UserProgressError(
+                username=username,
+                error="User not found",
+                last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                language_progress={},
+                weekly_xp_per_language={},
+                active_languages=[],
+            )
 
-        user = users[0]
+        user: DuolingoUser = users[0]
 
         # Extract language progress from courses
-        language_progress = {}
+        language_progress: dict[str, LanguageProgress] = {}
         total_languages_xp = 0
-        active_languages = []
+        active_languages: list[str] = []
 
         courses = user.get("courses", [])
         for course in courses:
@@ -236,12 +257,12 @@ def get_user_progress(username):
                 if lang_title:
                     total_languages_xp += lang_xp
                     active_languages.append(lang_title)
-                    language_progress[lang_title] = {
-                        "level": course.get("crowns", 0),  # Using crowns as level
-                        "xp": lang_xp,
-                        "from_language": course.get("fromLanguage", "en"),
-                        "learning_language": course.get("learningLanguage", ""),
-                    }
+                    language_progress[lang_title] = LanguageProgress(
+                        level=course.get("crowns", 0),  # Using crowns as level
+                        xp=lang_xp,
+                        from_language=course.get("fromLanguage", "en"),
+                        learning_language=course.get("learningLanguage", ""),
+                    )
 
         # Get streak data
         streak_data = user.get("streakData", {})
@@ -255,42 +276,44 @@ def get_user_progress(username):
             username, language_progress
         )
 
-        return {
-            "username": username,
-            "name": user.get("name", username),
-            "streak": streak,
-            "total_xp": user.get("totalXp", 0),
-            "weekly_xp": calculate_weekly_xp(username, user.get("totalXp", 0)),
-            "weekly_xp_per_language": weekly_xp_per_language,
-            "total_languages_xp": total_languages_xp,
-            "active_languages": active_languages,
-            "language_progress": language_progress,
-            "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        }
+        return UserProgress(
+            username=username,
+            name=user.get("name", username),
+            streak=streak,
+            total_xp=user.get("totalXp", 0),
+            weekly_xp=calculate_weekly_xp(username, user.get("totalXp", 0)),
+            weekly_xp_per_language=weekly_xp_per_language,
+            total_languages_xp=total_languages_xp,
+            active_languages=active_languages,
+            language_progress=language_progress,
+            last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        )
 
     except requests.RequestException as e:
-        return {
-            "username": username,
-            "error": f"API request failed: {str(e)}",
-            "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "language_progress": {},
-            "weekly_xp_per_language": {},
-            "active_languages": [],
-        }
+        return UserProgressError(
+            username=username,
+            error=f"API request failed: {str(e)}",
+            last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            language_progress={},
+            weekly_xp_per_language={},
+            active_languages=[],
+        )
     except Exception as e:
-        return {
-            "username": username,
-            "error": str(e),
-            "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "language_progress": {},
-            "weekly_xp_per_language": {},
-            "active_languages": [],
-        }
+        return UserProgressError(
+            username=username,
+            error=str(e),
+            last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            language_progress={},
+            weekly_xp_per_language={},
+            active_languages=[],
+        )
 
 
-def check_all_family(config):
+def check_all_family(
+    config: dict[str, Any] | None,
+) -> dict[str, Union[UserProgress, UserProgressError]]:
     """Check progress for all family members"""
-    results = {}
+    results: dict[str, Union[UserProgress, UserProgressError]] = {}
 
     if not config:
         print("❌ No configuration found")
@@ -300,7 +323,7 @@ def check_all_family(config):
     print("=" * 60)
 
     # Get users to check from config
-    users_to_check = {}
+    users_to_check: dict[str, str] = {}
 
     if config["family_members"]:
         # Use specified usernames
@@ -341,13 +364,13 @@ def check_all_family(config):
                     print(f"   Total languages XP: {progress['total_languages_xp']}")
             except Exception as e:
                 print(f"❌ Error processing {member_name}: {str(e)}")
-                results[member_name] = {
-                    "username": users_to_check[member_name],
-                    "error": f"Processing failed: {str(e)}",
-                    "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "language_progress": {},
-                    "weekly_xp_per_language": {},
-                    "active_languages": [],
-                }
+                results[member_name] = UserProgressError(
+                    username=users_to_check[member_name],
+                    error=f"Processing failed: {str(e)}",
+                    last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    language_progress={},
+                    weekly_xp_per_language={},
+                    active_languages=[],
+                )
 
     return results

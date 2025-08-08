@@ -173,28 +173,30 @@ class TestDuolingoIntegration:
         mock_response.raise_for_status = Mock()
         mock_get.return_value = mock_response
 
-        progress = get_user_progress("test_user")
+        progress = get_user_progress("test_user")  # type: ignore
 
-        assert progress["username"] == "test_user"
-        assert progress["name"] == "Test User"
-        assert progress["streak"] == 5
-        assert progress["total_xp"] == 10000
-        assert "Spanish" in progress["language_progress"]
-        assert "French" in progress["language_progress"]
-        assert progress["language_progress"]["Spanish"]["xp"] == 5000
-        assert "Spanish" in progress["active_languages"]
-        assert "French" in progress["active_languages"]
+        # Type narrowing - check that it's not an error response
+        assert "error" not in progress
+        assert progress["username"] == "test_user"  # type: ignore
+        assert progress["name"] == "Test User"  # type: ignore
+        assert progress["streak"] == 5  # type: ignore
+        assert progress["total_xp"] == 10000  # type: ignore
+        assert "Spanish" in progress["language_progress"]  # type: ignore
+        assert "French" in progress["language_progress"]  # type: ignore
+        assert progress["language_progress"]["Spanish"]["xp"] == 5000  # type: ignore
+        assert "Spanish" in progress["active_languages"]  # type: ignore
+        assert "French" in progress["active_languages"]  # type: ignore
 
     @patch("src.duolingo_api.requests.get")
     def test_get_user_progress_error(self, mock_get):
         """Test error handling in user progress retrieval"""
         mock_get.side_effect = Exception("API Error")
 
-        progress = get_user_progress("test_user")
+        progress = get_user_progress("test_user")  # type: ignore
 
-        assert "error" in progress
-        assert progress["error"] == "API Error"
-        assert progress["active_languages"] == []
+        assert "error" in progress  # type: ignore
+        assert progress["error"] == "API Error"  # type: ignore
+        assert progress["active_languages"] == []  # type: ignore
 
 
 class TestDataStorage:
