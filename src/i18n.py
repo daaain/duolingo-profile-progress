@@ -6,13 +6,13 @@ from typing import Any, Dict
 
 class I18n:
     """Simple internationalization class for managing translations"""
-    
+
     def __init__(self, language: str = "en"):
         """Initialize with specified language"""
         self.language = language
         self._translations: Dict[str, Dict[str, str]] = {}
         self._load_translations()
-    
+
     def _load_translations(self) -> None:
         """Load translation strings for all languages"""
         self._translations = {
@@ -26,7 +26,6 @@ class I18n:
                 "everyone_maintaining_streaks": "Everyone is maintaining their streaks!",
                 "needs_to_practice": "needs to practice today!",
                 "keep_learning": "Keep learning! 🌟",
-                
                 # Weekly report translations
                 "weekly_report_title": "Duolingo Family League - Weekly Report",
                 "weekly_report_header": "DUOLINGO FAMILY LEAGUE - WEEKLY REPORT",
@@ -37,7 +36,6 @@ class I18n:
                 "detailed_progress_title": "DETAILED PROGRESS",
                 "goals_title": "THIS WEEK'S FAMILY GOALS",
                 "keep_up_message": "Keep up the great work, everyone! 🌟",
-                
                 # General translations
                 "day_streak": "{count} day streak",
                 "days_streak": "{count} days streak",
@@ -72,7 +70,6 @@ class I18n:
                 "everyone_maintaining_streaks": "Mindenki tartja a sorozatát!",
                 "needs_to_practice": "ma gyakorolnia kell!",
                 "keep_learning": "Folytassátok a tanulást! 🌟",
-                
                 # Weekly report translations
                 "weekly_report_title": "Duolingo Családi Liga - Heti Jelentés",
                 "weekly_report_header": "DUOLINGO CSALÁDI LIGA - HETI JELENTÉS",
@@ -83,7 +80,6 @@ class I18n:
                 "detailed_progress_title": "RÉSZLETES ELŐREHALADÁS",
                 "goals_title": "E HETI CSALÁDI CÉLOK",
                 "keep_up_message": "Csak így tovább, mindenki! 🌟",
-                
                 # General translations
                 "day_streak": "{count} napos sorozat",
                 "days_streak": "{count} napos sorozat",
@@ -107,9 +103,9 @@ class I18n:
                 "weekly_gain": "+{xp} ezen a héten",
                 "date_format": "%Y. %m. %d.",
                 "datetime_format": "%Y. %m. %d. %H:%M:%S",
-            }
+            },
         }
-    
+
     def get(self, key: str, **kwargs: Any) -> str:
         """Get translated string with optional formatting parameters"""
         if self.language not in self._translations:
@@ -117,20 +113,20 @@ class I18n:
             translation = self._translations.get("en", {}).get(key, key)
         else:
             translation = self._translations[self.language].get(key, key)
-        
+
         if kwargs:
             try:
                 return translation.format(**kwargs)
             except (KeyError, ValueError):
                 # If formatting fails, return the unformatted string
                 return translation
-        
+
         return translation
-    
+
     def set_language(self, language: str) -> None:
         """Change the current language"""
         self.language = language
-    
+
     def get_available_languages(self) -> list[str]:
         """Get list of available language codes"""
         return list(self._translations.keys())
@@ -144,9 +140,11 @@ def get_language_from_env() -> str:
 # Global instance for easy access
 _i18n = I18n(get_language_from_env())
 
+
 def get_i18n() -> I18n:
     """Get the global i18n instance"""
     return _i18n
+
 
 def set_global_language(language: str) -> None:
     """Set the global language"""

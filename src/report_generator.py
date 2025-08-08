@@ -175,10 +175,12 @@ def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> st
 def generate_daily_report_html(results: dict[str, Any]) -> str:
     """Generate a daily progress report in HTML format"""
     from .html_report_generator import generate_daily_html_report
+
     return generate_daily_html_report(results)
 
 
 def generate_weekly_report_html(results: dict[str, Any], goals: dict[str, Any]) -> str:
     """Generate comprehensive weekly family report in HTML format"""
     from .html_report_generator import generate_weekly_html_report
+
     return generate_weekly_html_report(results, goals)
