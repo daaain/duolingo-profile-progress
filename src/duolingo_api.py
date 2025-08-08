@@ -2,6 +2,7 @@
 
 import requests
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 
@@ -310,23 +311,43 @@ def check_all_family(config):
         print("⚠️ No users specified in DUOLINGO_USERNAMES")
         return results
 
-    # Process each user
-    for member_name, username in users_to_check.items():
-        print(f"\nChecking {member_name}...")
+    # Process all users in parallel
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # Submit all requests
+        future_to_member = {
+            executor.submit(get_user_progress, username): member_name
+            for member_name, username in users_to_check.items()
+        }
 
-        progress = get_user_progress(username)
-        results[member_name] = progress
+        # Process completed requests as they finish
+        for future in as_completed(future_to_member):
+            member_name = future_to_member[future]
+            print(f"\nChecking {member_name}...")
 
-        if "error" in progress:
-            print(f"❌ Error: {progress['error']}")
-        else:
-            active_langs = progress.get("active_languages", [])
-            print(f"✅ Current streak: {progress['streak']} days")
-            print(f"   Name: {progress.get('name', 'Unknown')}")
-            print(
-                f"   Active languages: {', '.join(active_langs) if active_langs else 'None'}"
-            )
-            print(f"   Total XP: {progress['total_xp']}")
-            print(f"   Total languages XP: {progress['total_languages_xp']}")
+            try:
+                progress = future.result()
+                results[member_name] = progress
+
+                if "error" in progress:
+                    print(f"❌ Error: {progress['error']}")
+                else:
+                    active_langs = progress.get("active_languages", [])
+                    print(f"✅ Current streak: {progress['streak']} days")
+                    print(f"   Name: {progress.get('name', 'Unknown')}")
+                    print(
+                        f"   Active languages: {', '.join(active_langs) if active_langs else 'None'}"
+                    )
+                    print(f"   Total XP: {progress['total_xp']}")
+                    print(f"   Total languages XP: {progress['total_languages_xp']}")
+            except Exception as e:
+                print(f"❌ Error processing {member_name}: {str(e)}")
+                results[member_name] = {
+                    "username": users_to_check[member_name],
+                    "error": f"Processing failed: {str(e)}",
+                    "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "language_progress": {},
+                    "weekly_xp_per_language": {},
+                    "active_languages": [],
+                }
 
     return results
