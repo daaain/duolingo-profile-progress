@@ -6,6 +6,8 @@ Track your family's Duolingo language learning progress with automated daily and
 
 - **Multi-language tracking**: Monitor progress across multiple languages for each family member
 - **Daily & Weekly Reports**: Get automated email reports with leaderboards and progress updates
+- **HTML Export**: Generate beautiful HTML reports with responsive design and styling
+- **Multi-language Support**: Reports available in English and Hungarian (more languages can be added)
 - **Streak tracking**: Monitor and celebrate streak achievements
 - **Goal setting**: Set weekly XP and streak goals for motivation
 - **Data persistence**: Automatically saves daily progress data for historical tracking
@@ -13,8 +15,6 @@ Track your family's Duolingo language learning progress with automated daily and
 - **Modular architecture**: Clean separation of concerns for easy maintenance
 
 ## Installation
-
-## Configuration
 
 ### 1. Environment Variables
 
@@ -34,6 +34,10 @@ DUOLINGO_USERNAMES=dad_username,mom_username,alice_username
 # Goals Configuration
 WEEKLY_XP_GOAL=500
 STREAK_GOAL=7
+
+# Report Language (optional - defaults to English)
+# Supported: en (English), hu (Hungarian)
+DUOLINGO_REPORT_LANGUAGE=en
 
 # Email Configuration
 SMTP_SERVER=smtp.gmail.com
@@ -65,6 +69,9 @@ python duolingo_family_league.py --daily
 
 # Save data and send email
 python duolingo_family_league.py --daily --send-email
+
+# Generate HTML report in addition to text
+python duolingo_family_league.py --daily --html
 ```
 
 ### Weekly Report
@@ -77,7 +84,27 @@ python duolingo_family_league.py --weekly
 
 # Also send via email
 python duolingo_family_league.py --weekly --send-email
+
+# Generate HTML report in addition to text
+python duolingo_family_league.py --weekly --html
 ```
+
+### HTML Reports
+
+Generate beautiful HTML reports with responsive design:
+
+```bash
+# Generate HTML for current status
+python duolingo_family_league.py --html
+
+# Generate HTML daily report
+python duolingo_family_league.py --daily --html
+
+# Generate HTML weekly report
+python duolingo_family_league.py --weekly --html
+```
+
+HTML reports include professional styling, responsive design, and rich formatting with progress badges and visual indicators.
 
 ### Automation with Cron
 
@@ -107,6 +134,71 @@ The project includes a LaunchAgent configuration for reliable scheduling:
    cp com.duolingo.familyleague.plist ~/Library/LaunchAgents/
    launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
    ```
+
+## HTML Reports
+
+The application can generate beautiful HTML reports with responsive design and professional styling. HTML reports include:
+
+- **Responsive Design**: Optimized for both desktop and mobile viewing
+- **Professional Styling**: Clean, modern interface with Duolingo-inspired colors
+- **Rich Formatting**: Progress badges, status indicators, and visual hierarchy
+- **Multi-language Support**: Available in English and Hungarian
+
+### Generating HTML Reports
+
+HTML reports are generated automatically when using the email functionality. The HTML versions are embedded in email reports for better presentation.
+
+To programmatically generate HTML reports:
+
+```python
+from src.report_generator import generate_daily_report_html, generate_weekly_report_html
+from src.duolingo_api import check_all_family
+from src.config import load_config
+
+# Load configuration and check family progress
+config = load_config()
+results = check_all_family(config)
+goals = config.get("goals", {})
+
+# Generate HTML reports
+daily_html = generate_daily_report_html(results)
+weekly_html = generate_weekly_report_html(results, goals)
+
+# Save to files
+with open("daily_report.html", "w") as f:
+    f.write(daily_html)
+    
+with open("weekly_report.html", "w") as f:
+    f.write(weekly_html)
+```
+
+### Language Selection
+
+Set your preferred report language using the `DUOLINGO_REPORT_LANGUAGE` environment variable:
+
+- `en` - English (default)
+- `hu` - Hungarian
+
+The language setting affects both text and HTML reports. Additional languages can be easily added by creating new JSON files in the `translations/` directory.
+
+### Adding New Languages
+
+To add support for a new language:
+
+1. Create a new JSON file in the `translations/` directory (e.g., `translations/es.json` for Spanish)
+2. Copy the structure from `translations/en.json` and translate all the values
+3. Set `DUOLINGO_REPORT_LANGUAGE=es` in your environment variables
+
+Example for Spanish (`translations/es.json`):
+
+```json
+{
+  "daily_report_title": "Liga Familiar de Duolingo - Actualización Diaria",
+  "daily_report_header": "LIGA FAMILIAR DE DUOLINGO - ACTUALIZACIÓN DIARIA",
+  "keep_learning": "¡Sigue aprendiendo! 🌟",
+  ...
+}
+```
 
 ## Data Storage
 
@@ -158,10 +250,6 @@ Week ending: 2025-08-05
       Japanese: Level 5 | 1,180 XP
 ```
 
-## Supported Languages
-
-Spanish, French, German, Italian, Portuguese, Dutch, Russian, Japanese, Korean, Chinese, Arabic, Hindi, Turkish, Polish, Norwegian, Swedish, Danish, Finnish, Czech, Hungarian, Romanian, Ukrainian, Greek, Hebrew, Vietnamese, Thai, Indonesian, Swahili, and more.
-
 ## Requirements
 
 - Python 3.8+
@@ -208,7 +296,14 @@ uv sync --all-extras
 │   ├── duolingo_api.py         # Duolingo API integration
 │   ├── data_storage.py         # Data persistence
 │   ├── email_sender.py         # Email functionality
-│   └── report_generator.py     # Report generation
+│   ├── report_generator.py     # Report generation
+│   ├── html_report_generator.py # HTML report generation
+│   ├── html_templates.py       # HTML templates and styling
+│   ├── i18n.py                 # Internationalization support
+│   └── types.py                # Type definitions
+├── translations/               # Translation files
+│   ├── en.json                 # English translations
+│   └── hu.json                 # Hungarian translations
 ├── tests/
 │   └── test_family_league.py   # Pytest test suite
 ├── league_data/                # Historical data (created automatically)
@@ -226,6 +321,7 @@ pytest tests/ -v
 ### Linting
 
 ```sh
+ruff format
 ruff check --fix
 ty check
 pyright

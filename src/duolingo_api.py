@@ -246,7 +246,6 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
 
         # Extract language progress from courses
         language_progress: dict[str, LanguageProgress] = {}
-        total_languages_xp = 0
         active_languages: list[str] = []
 
         courses = user.get("courses", [])
@@ -255,10 +254,8 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             if lang_xp > 0:
                 lang_title = course.get("title", "")
                 if lang_title:
-                    total_languages_xp += lang_xp
                     active_languages.append(lang_title)
                     language_progress[lang_title] = LanguageProgress(
-                        level=course.get("crowns", 0),  # Using crowns as level
                         xp=lang_xp,
                         from_language=course.get("fromLanguage", "en"),
                         learning_language=course.get("learningLanguage", ""),
@@ -283,7 +280,6 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             total_xp=user.get("totalXp", 0),
             weekly_xp=calculate_weekly_xp(username, user.get("totalXp", 0)),
             weekly_xp_per_language=weekly_xp_per_language,
-            total_languages_xp=total_languages_xp,
             active_languages=active_languages,
             language_progress=language_progress,
             last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -361,7 +357,6 @@ def check_all_family(
                         f"   Active languages: {', '.join(active_langs) if active_langs else 'None'}"
                     )
                     print(f"   Total XP: {progress['total_xp']}")
-                    print(f"   Total languages XP: {progress['total_languages_xp']}")
             except Exception as e:
                 print(f"❌ Error processing {member_name}: {str(e)}")
                 results[member_name] = UserProgressError(

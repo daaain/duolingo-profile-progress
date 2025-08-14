@@ -256,19 +256,16 @@ class TestReportGeneration:
                 "streak": 5,
                 "weekly_xp": 100,
                 "total_xp": 1000,
-                "total_languages_xp": 500,
             },
             "User2": {
                 "streak": 10,
                 "weekly_xp": 200,
                 "total_xp": 2000,
-                "total_languages_xp": 1000,
             },
             "User3": {
                 "streak": 3,
                 "weekly_xp": 50,
                 "total_xp": 500,
-                "total_languages_xp": 250,
             },
             "User4": {"error": "Profile private"},
         }
@@ -284,18 +281,41 @@ class TestReportGeneration:
         """Test daily report generation"""
         results = {
             "User1": {
-                "streak": 5,
-                "weekly_xp": 100,
+                "streak": 7,
+                "weekly_xp": 150,
                 "total_xp": 1000,
-                "total_languages_xp": 500,
-                "language_progress": {"Spanish": {"xp": 500, "level": 5}},
+                "language_progress": {
+                    "Spanish": {
+                        "xp": 500,
+                        "from_language": "en",
+                        "learning_language": "es",
+                    }
+                },
             },
             "User2": {
                 "streak": 0,
                 "weekly_xp": 0,
                 "total_xp": 100,
+                "language_progress": {
+                    "French": {
+                        "xp": 50,
+                        "from_language": "en",
+                        "learning_language": "fr",
+                    }
+                },
+            },
+            "User3": {
+                "streak": 0,
+                "weekly_xp": 0,
+                "total_xp": 100,
                 "total_languages_xp": 50,
-                "language_progress": {"French": {"xp": 50, "level": 1}},
+                "language_progress": {
+                    "French": {
+                        "xp": 50,
+                        "from_language": "en",
+                        "learning_language": "fr",
+                    }
+                },
             },
         }
 
@@ -313,10 +333,17 @@ class TestReportGeneration:
                 "streak": 7,
                 "weekly_xp": 600,
                 "total_xp": 10000,
-                "total_languages_xp": 5000,
                 "language_progress": {
-                    "Spanish": {"xp": 3000, "level": 10},
-                    "French": {"xp": 2000, "level": 8},
+                    "Spanish": {
+                        "xp": 3000,
+                        "from_language": "en",
+                        "learning_language": "es",
+                    },
+                    "French": {
+                        "xp": 2000,
+                        "from_language": "en",
+                        "learning_language": "fr",
+                    },
                 },
             }
         }
@@ -327,8 +354,8 @@ class TestReportGeneration:
         assert "WEEKLY REPORT" in report
         assert "STREAK GOAL ACHIEVED" in report  # 7-day streak
         assert "WEEKLY XP GOAL ACHIEVED" in report  # 600 > 500
-        assert "Spanish: Level 10" in report
-        assert "French: Level 8" in report
+        assert "Spanish: 3,000 XP" in report
+        assert "French: 2,000 XP" in report
 
 
 class TestEmailFunctionality:

@@ -12,13 +12,11 @@ def generate_leaderboard(results: dict[str, Any]) -> list[dict[str, Any]]:
         if "error" not in data:
             leaderboard_data.append(
                 {
-                    "name": member_name,
+                    "name": data.get("name", member_name),
                     "streak": data["streak"],
                     "weekly_xp": data["weekly_xp"],
                     "total_xp": data["total_xp"],
-                    "target_xp": data.get(
-                        "total_languages_xp", data.get("target_languages_xp", 0)
-                    ),
+                    "target_xp": data.get("total_xp", 0),
                     "data": data,
                 }
             )
@@ -43,7 +41,7 @@ def generate_daily_report(results: dict[str, Any]) -> str:
 
     # Quick leaderboard
     report.append("🏆 Today's Standings:")
-    for i, member in enumerate(leaderboard[:3], 1):
+    for i, member in enumerate(leaderboard, 1):
         emoji = ["🥇", "🥈", "🥉"][i - 1] if i <= 3 else f"{i}."
         weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
         active_langs = [
@@ -61,7 +59,9 @@ def generate_daily_report(results: dict[str, Any]) -> str:
     alerts: list[str] = []
     for member_name, data in results.items():
         if "error" not in data and data["streak"] == 0:
-            alerts.append(f"  • {member_name} needs to practice today!")
+            alerts.append(
+                f"  • {data.get('name', member_name)} needs to practice today!"
+            )
 
     if alerts:
         report.extend(alerts)
@@ -110,11 +110,11 @@ def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> st
 
     for member_name, data in results.items():
         if "error" in data:
-            report.append(f"\n👤 {member_name}")
+            report.append(f"\n👤 {data.get('name', member_name)}")
             report.append(f"   ❌ Unable to check progress: {data['error']}")
             continue
 
-        report.append(f"\n👤 {member_name} ({data['username']})")
+        report.append(f"\n👤 {data.get('name', member_name)} ({data['username']})")
         report.append(f"   Current streak: {data['streak']} days")
 
         # Streak status
@@ -146,12 +146,10 @@ def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> st
                     weekly_lang_xp = weekly_xp_per_lang.get(lang, 0)
                     if weekly_lang_xp > 0:
                         report.append(
-                            f"      {lang}: Level {progress['level']} | {progress['xp']:,} XP (+{weekly_lang_xp} this week)"
+                            f"      {lang}: {progress['xp']:,} XP (+{weekly_lang_xp} this week)"
                         )
                     else:
-                        report.append(
-                            f"      {lang}: Level {progress['level']} | {progress['xp']:,} XP"
-                        )
+                        report.append(f"      {lang}: {progress['xp']:,} XP")
                 else:
                     report.append(f"      {lang}: Not started yet")
         elif data.get("active_languages"):
@@ -170,3 +168,17 @@ def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> st
     report.append("\nKeep up the great work, everyone! 🌟")
 
     return "\n".join(report)
+
+
+def generate_daily_report_html(results: dict[str, Any]) -> str:
+    """Generate a daily progress report in HTML format"""
+    from .html_report_generator import generate_daily_html_report
+
+    return generate_daily_html_report(results)
+
+
+def generate_weekly_report_html(results: dict[str, Any], goals: dict[str, Any]) -> str:
+    """Generate comprehensive weekly family report in HTML format"""
+    from .html_report_generator import generate_weekly_html_report
+
+    return generate_weekly_html_report(results, goals)

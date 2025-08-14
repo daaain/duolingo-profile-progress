@@ -193,11 +193,9 @@ class TestWeeklyXPCalculation:
                         "streak": 288,
                         "total_xp": 181289,
                         "weekly_xp": 0,
-                        "total_languages_xp": 181289,
                         "active_languages": ["Spanish", "French"],
                         "language_progress": {
                             "Spanish": {
-                                "level": 9999,
                                 "xp": 180932,
                                 "from_language": "en",
                                 "learning_language": "es",
@@ -216,11 +214,9 @@ class TestWeeklyXPCalculation:
                         "streak": 289,
                         "total_xp": 181946,
                         "weekly_xp": 0,
-                        "total_languages_xp": 181946,
                         "active_languages": ["Spanish", "French"],
                         "language_progress": {
                             "Spanish": {
-                                "level": 9999,
                                 "xp": 181589,
                                 "from_language": "en",
                                 "learning_language": "es",
@@ -250,8 +246,8 @@ class TestWeeklyXPPerLanguage:
         mock_storage.load_history.return_value = []
 
         current_languages = {
-            "Spanish": {"xp": 5000, "level": 10},
-            "French": {"xp": 2000, "level": 5},
+            "Spanish": {"xp": 5000, "from_language": "en", "learning_language": "es"},
+            "French": {"xp": 2000, "from_language": "en", "learning_language": "fr"},
         }
 
         result = calculate_weekly_xp_per_language("testuser", current_languages)
@@ -270,8 +266,16 @@ class TestWeeklyXPPerLanguage:
                     "testuser": {
                         "username": "testuser",
                         "language_progress": {
-                            "Spanish": {"xp": 4500, "level": 9},
-                            "French": {"xp": 1800, "level": 4},
+                            "Spanish": {
+                                "xp": 4500,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            },
+                            "French": {
+                                "xp": 1800,
+                                "from_language": "en",
+                                "learning_language": "fr",
+                            },
                         },
                     }
                 },
@@ -279,8 +283,8 @@ class TestWeeklyXPPerLanguage:
         ]
 
         current_languages = {
-            "Spanish": {"xp": 5000, "level": 10},
-            "French": {"xp": 2000, "level": 5},
+            "Spanish": {"xp": 5000, "from_language": "en", "learning_language": "es"},
+            "French": {"xp": 2000, "from_language": "en", "learning_language": "fr"},
         }
 
         result = calculate_weekly_xp_per_language("testuser", current_languages)
@@ -299,16 +303,26 @@ class TestWeeklyXPPerLanguage:
                 "results": {
                     "testuser": {
                         "username": "testuser",
-                        "language_progress": {"Spanish": {"xp": 4500, "level": 9}},
+                        "language_progress": {
+                            "Spanish": {
+                                "xp": 4500,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            }
+                        },
                     }
                 },
             }
         ]
 
         current_languages = {
-            "Spanish": {"xp": 5000, "level": 10},
-            "French": {"xp": 200, "level": 1},  # New language
-            "German": {"xp": 150, "level": 1},  # Another new language
+            "Spanish": {"xp": 5000, "from_language": "en", "learning_language": "es"},
+            "French": {"xp": 200},  # New language
+            "German": {
+                "xp": 150,
+                "from_language": "en",
+                "learning_language": "de",
+            },  # Another new language
         }
 
         result = calculate_weekly_xp_per_language("testuser", current_languages)
@@ -329,8 +343,16 @@ class TestWeeklyXPPerLanguage:
                     "testuser": {
                         "username": "testuser",
                         "language_progress": {
-                            "Spanish": {"xp": 5000, "level": 10},
-                            "French": {"xp": 2000, "level": 5},
+                            "Spanish": {
+                                "xp": 5000,
+                                "from_language": "en",
+                                "learning_language": "es",
+                            },
+                            "French": {
+                                "xp": 2000,
+                                "from_language": "en",
+                                "learning_language": "fr",
+                            },
                         },
                     }
                 },
@@ -338,8 +360,8 @@ class TestWeeklyXPPerLanguage:
         ]
 
         current_languages = {
-            "Spanish": {"xp": 5000, "level": 10},
-            "French": {"xp": 2000, "level": 5},
+            "Spanish": {"xp": 5000, "from_language": "en", "learning_language": "es"},
+            "French": {"xp": 2000, "from_language": "en", "learning_language": "fr"},
         }
 
         result = calculate_weekly_xp_per_language("testuser", current_languages)
@@ -360,13 +382,11 @@ class TestWeeklyXPPerLanguage:
                         "username": "daaain",
                         "language_progress": {
                             "Spanish": {
-                                "level": 9999,
                                 "xp": 180932,
                                 "from_language": "en",
                                 "learning_language": "es",
                             },
                             "French": {
-                                "level": 9999,
                                 "xp": 357,
                                 "from_language": "en",
                                 "learning_language": "fr",
