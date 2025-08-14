@@ -94,8 +94,16 @@ class TestHtmlReportGeneration:
                 "total_xp": 12500,
                 "weekly_xp_per_language": {"Spanish": 400, "French": 350},
                 "language_progress": {
-                    "Spanish": {"level": 8, "xp": 3200},
-                    "French": {"level": 5, "xp": 1800},
+                    "Spanish": {
+                        "xp": 3200,
+                        "from_language": "en",
+                        "learning_language": "es",
+                    },
+                    "French": {
+                        "xp": 1800,
+                        "from_language": "en",
+                        "learning_language": "fr",
+                    },
                 },
             },
             "Bob": {
@@ -104,7 +112,13 @@ class TestHtmlReportGeneration:
                 "weekly_xp": 420,
                 "total_xp": 8400,
                 "weekly_xp_per_language": {"German": 420},
-                "language_progress": {"German": {"level": 6, "xp": 2400}},
+                "language_progress": {
+                    "German": {
+                        "xp": 2400,
+                        "from_language": "en",
+                        "learning_language": "de",
+                    }
+                },
             },
             "Charlie": {"error": "Profile not found"},
         }
@@ -116,9 +130,15 @@ class TestHtmlReportGeneration:
 
     def test_generate_daily_html_report(self, sample_results):
         """Test daily HTML report generation"""
-        with patch("src.html_report_generator.get_i18n") as mock_i18n:
+        with (
+            patch("src.html_report_generator.get_i18n") as mock_i18n,
+            patch(
+                "src.html_report_generator.translate_language_name"
+            ) as mock_translate,
+        ):
             mock_i18n_instance = I18n("en")
             mock_i18n.return_value = mock_i18n_instance
+            mock_translate.side_effect = lambda x: x  # Return language name unchanged
 
             html_report = generate_daily_html_report(sample_results)
 

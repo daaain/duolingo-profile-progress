@@ -87,7 +87,6 @@ class DuolingoApiResponse(TypedDict):
 class LanguageProgress(TypedDict):
     """Internal representation of language progress"""
 
-    level: int
     xp: int
     from_language: str
     learning_language: str
@@ -102,7 +101,7 @@ class UserProgress(TypedDict):
     total_xp: int
     weekly_xp: int
     weekly_xp_per_language: dict[str, int]
-    total_languages_xp: int
+
     active_languages: list[str]
     language_progress: dict[str, LanguageProgress]
     last_check: str

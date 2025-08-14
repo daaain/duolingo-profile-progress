@@ -1,6 +1,8 @@
 """Internationalization support for Duolingo Family League reports"""
 
+import json
 import os
+from pathlib import Path
 from typing import Any, Dict
 
 
@@ -14,105 +16,61 @@ class I18n:
         self._load_translations()
 
     def _load_translations(self) -> None:
-        """Load translation strings for all languages"""
-        self._translations = {
-            "en": {
-                # Daily report translations
-                "daily_report_title": "Duolingo Family League - Daily Update",
-                "daily_report_header": "DUOLINGO FAMILY LEAGUE - DAILY UPDATE",
-                "daily_report_subtitle": "Track your family's language learning progress",
-                "standings_title": "Today's Standings",
-                "streak_alerts_title": "Streak Alerts",
-                "everyone_maintaining_streaks": "Everyone is maintaining their streaks!",
-                "needs_to_practice": "needs to practice today!",
-                "keep_learning": "Keep learning! 🌟",
-                # Weekly report translations
-                "weekly_report_title": "Duolingo Family League - Weekly Report",
-                "weekly_report_header": "DUOLINGO FAMILY LEAGUE - WEEKLY REPORT",
-                "weekly_report_subtitle": "Comprehensive weekly family progress report",
-                "week_ending": "Week ending: {date}",
-                "generated_date": "Generated: {date}",
-                "family_leaderboard_title": "FAMILY LEADERBOARD",
-                "detailed_progress_title": "DETAILED PROGRESS",
-                "goals_title": "THIS WEEK'S FAMILY GOALS",
-                "keep_up_message": "Keep up the great work, everyone! 🌟",
-                # General translations
-                "day_streak": "{count} day streak",
-                "days_streak": "{count} days streak",
-                "weekly_xp": "{count} weekly XP",
-                "total_xp": "{count:,} total XP",
-                "current_streak": "Current streak: {count} days",
-                "streak_goal_achieved": "STREAK GOAL ACHIEVED!",
-                "weekly_xp_goal_achieved": "WEEKLY XP GOAL ACHIEVED! ({current}/{goal})",
-                "good_progress_streak": "Good progress towards {goal}-day goal",
-                "work_needed_streak": "Work needed for {goal}-day streak goal",
-                "weekly_xp_progress": "Weekly XP progress: {current}/{goal}",
-                "language_progress": "Language Progress:",
-                "active_languages": "Active Languages: {languages}",
-                "not_started_yet": "Not started yet",
-                "maintain_streak_goal": "Maintain a {goal}-day streak",
-                "earn_xp_goal": "Earn {goal} XP this week",
-                "beat_personal_best": "Try to beat your personal best!",
-                "unable_to_check": "Unable to check progress: {error}",
-                "level": "Level {level}",
-                "xp": "{xp:,} XP",
-                "weekly_gain": "+{xp} this week",
-                "date_format": "%Y-%m-%d",
-                "datetime_format": "%Y-%m-%d %H:%M:%S",
-            },
-            "hu": {
-                # Daily report translations
-                "daily_report_title": "Duolingo Családi Liga - Napi Frissítés",
-                "daily_report_header": "DUOLINGO CSALÁDI LIGA - NAPI FRISSÍTÉS",
-                "daily_report_subtitle": "Kövesse nyomon családja nyelvtanulási előrehaladását",
-                "standings_title": "Mai Eredmények",
-                "streak_alerts_title": "Sorozat Figyelmeztetések",
-                "everyone_maintaining_streaks": "Mindenki tartja a sorozatát!",
-                "needs_to_practice": "ma gyakorolnia kell!",
-                "keep_learning": "Folytassátok a tanulást! 🌟",
-                # Weekly report translations
-                "weekly_report_title": "Duolingo Családi Liga - Heti Jelentés",
-                "weekly_report_header": "DUOLINGO CSALÁDI LIGA - HETI JELENTÉS",
-                "weekly_report_subtitle": "Átfogó heti családi előrehaladási jelentés",
-                "week_ending": "Hét vége: {date}",
-                "generated_date": "Létrehozva: {date}",
-                "family_leaderboard_title": "CSALÁDI RANGLISTA",
-                "detailed_progress_title": "RÉSZLETES ELŐREHALADÁS",
-                "goals_title": "E HETI CSALÁDI CÉLOK",
-                "keep_up_message": "Csak így tovább, mindenki! 🌟",
-                # General translations
-                "day_streak": "{count} napos sorozat",
-                "days_streak": "{count} napos sorozat",
-                "weekly_xp": "{count} heti XP",
-                "total_xp": "{count:,} összes XP",
-                "current_streak": "Jelenlegi sorozat: {count} nap",
-                "streak_goal_achieved": "SOROZAT CÉL TELJESÍTVE!",
-                "weekly_xp_goal_achieved": "HETI XP CÉL TELJESÍTVE! ({current}/{goal})",
-                "good_progress_streak": "Jó előrehaladás a {goal}-napos cél felé",
-                "work_needed_streak": "További munka szükséges a {goal}-napos sorozat céljához",
-                "weekly_xp_progress": "Heti XP előrehaladás: {current}/{goal}",
-                "language_progress": "Nyelvi Előrehaladás:",
-                "active_languages": "Aktív Nyelvek: {languages}",
-                "not_started_yet": "Még nem kezdte el",
-                "maintain_streak_goal": "Tartsa fenn a {goal}-napos sorozatot",
-                "earn_xp_goal": "Szerezzen {goal} XP-t ezen a héten",
-                "beat_personal_best": "Próbálja megdönteni a személyes rekordját!",
-                "unable_to_check": "Nem sikerült ellenőrizni az előrehaladást: {error}",
-                "level": "{level}. szint",
-                "xp": "{xp:,} XP",
-                "weekly_gain": "+{xp} ezen a héten",
-                "date_format": "%Y. %m. %d.",
-                "datetime_format": "%Y. %m. %d. %H:%M:%S",
-            },
-        }
+        """Load translation strings from JSON files"""
+        # Get the project root directory (parent of src)
+        project_root = Path(__file__).parent.parent
+        translations_dir = project_root / "translations"
 
-    def get(self, key: str, **kwargs: Any) -> str:
+        self._translations = {}
+
+        # Load all JSON files in the translations directory
+        if translations_dir.exists():
+            for json_file in translations_dir.glob("*.json"):
+                language_code = json_file.stem
+                try:
+                    with open(json_file, "r", encoding="utf-8") as f:
+                        self._translations[language_code] = json.load(f)
+                except (json.JSONDecodeError, IOError) as e:
+                    print(
+                        f"Warning: Could not load translations for {language_code}: {e}"
+                    )
+
+        # Fallback to English if no translations were loaded
+        if not self._translations:
+            print(
+                "Warning: No translation files found, using fallback English translations"
+            )
+            self._translations = {
+                "en": {
+                    "daily_report_title": "Duolingo Family League - Daily Update",
+                    "daily_report_header": "DUOLINGO FAMILY LEAGUE - DAILY UPDATE",
+                    "keep_learning": "Keep learning! 🌟",
+                }
+            }
+
+    def get(self, key: str, default: str | None = None, **kwargs: Any) -> str:
         """Get translated string with optional formatting parameters"""
+        # Handle nested keys like "languages.Spanish"
+        keys = key.split(".")
+
         if self.language not in self._translations:
             # Fallback to English if language not found
-            translation = self._translations.get("en", {}).get(key, key)
+            translation_dict = self._translations.get("en", {})
         else:
-            translation = self._translations[self.language].get(key, key)
+            translation_dict = self._translations[self.language]
+
+        # Navigate through nested keys
+        translation = translation_dict
+        for k in keys:
+            if isinstance(translation, dict) and k in translation:
+                translation = translation[k]
+            else:
+                translation = default if default is not None else key
+                break
+
+        # If we ended up with a dict, return the default/key
+        if isinstance(translation, dict):
+            translation = default if default is not None else key
 
         if kwargs:
             try:
@@ -149,3 +107,8 @@ def get_i18n() -> I18n:
 def set_global_language(language: str) -> None:
     """Set the global language"""
     _i18n.set_language(language)
+
+
+def translate_language_name(language_name: str) -> str:
+    """Translate a language name using the current i18n settings"""
+    return _i18n.get(f"languages.{language_name}", default=language_name)

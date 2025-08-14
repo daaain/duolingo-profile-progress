@@ -4,7 +4,7 @@ import html
 from datetime import datetime
 from typing import Any
 from .html_templates import DAILY_REPORT_TEMPLATE, WEEKLY_REPORT_TEMPLATE
-from .i18n import get_i18n
+from .i18n import get_i18n, translate_language_name
 from .report_generator import generate_leaderboard
 
 # Constants
@@ -17,8 +17,6 @@ POSITION_EMOJIS = ["🥇", "🥈", "🥉"]
 
 def generate_daily_html_report(results: dict[str, Any]) -> str:
     """Generate a daily progress report in HTML format"""
-    if not isinstance(results, dict):
-        raise ValueError("Results must be a dictionary")
 
     i18n = get_i18n()
     leaderboard = generate_leaderboard(results)
@@ -26,13 +24,13 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     # Generate leaderboard items HTML
     leaderboard_items: list[str] = []
 
-    for i, member in enumerate(leaderboard[:TOP_POSITIONS_COUNT], 1):
-        emoji = POSITION_EMOJIS[i - 1] if i <= TOP_POSITIONS_COUNT else f"{i}."
+    for i, member in enumerate(leaderboard, 1):
+        emoji = POSITION_EMOJIS[i - 1] if i <= len(POSITION_EMOJIS) else f"{i}."
 
         # Format language progress
         weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
         active_langs = [
-            f"{html.escape(lang)} +{xp}"
+            f"{html.escape(translate_language_name(lang))} +{xp}"
             for lang, xp in weekly_xp_per_lang.items()
             if xp > 0
         ]
@@ -64,7 +62,7 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     for member_name, data in results.items():
         if "error" not in data and data["streak"] == 0:
             alerts.append(
-                f"<li>• {html.escape(member_name)} {i18n.get('needs_to_practice')}</li>"
+                f"<li>• {html.escape(data.get('name', member_name))} {i18n.get('needs_to_practice')}</li>"
             )
 
     if alerts:
@@ -93,10 +91,6 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
 
 def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) -> str:
     """Generate comprehensive weekly family report in HTML format"""
-    if not isinstance(results, dict):
-        raise ValueError("Results must be a dictionary")
-    if not isinstance(goals, dict):
-        raise ValueError("Goals must be a dictionary")
 
     i18n = get_i18n()
     leaderboard = generate_leaderboard(results)
@@ -141,7 +135,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                     <div class="member-header">
                         <div class="member-avatar">👤</div>
                         <div>
-                            <div class="member-title">{html.escape(member_name)}</div>
+                            <div class="member-title">{html.escape(data.get("name", member_name))}</div>
                         </div>
                     </div>
                     <div class="progress-item">
@@ -184,8 +178,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                         language_items.append(
                             f"""
                             <div class="language-item">
-                                <span class="language-name">{html.escape(lang)}:</span> 
-                                {i18n.get("level", level=progress["level"])} | 
+                                <span class="language-name">{html.escape(translate_language_name(lang))}:</span> 
                                 {i18n.get("xp", xp=progress["xp"])} 
                                 ({i18n.get("weekly_gain", xp=weekly_lang_xp)})
                             </div>
@@ -195,8 +188,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                         language_items.append(
                             f"""
                             <div class="language-item">
-                                <span class="language-name">{html.escape(lang)}:</span> 
-                                {i18n.get("level", level=progress["level"])} | 
+                                <span class="language-name">{html.escape(translate_language_name(lang))}:</span> 
                                 {i18n.get("xp", xp=progress["xp"])}
                             </div>
                         """.strip()
@@ -205,7 +197,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                     language_items.append(
                         f"""
                         <div class="language-item">
-                            <span class="language-name">{html.escape(lang)}:</span> {i18n.get("not_started_yet")}
+                            <span class="language-name">{html.escape(translate_language_name(lang))}:</span> {i18n.get("not_started_yet")}
                         </div>
                     """.strip()
                     )
@@ -220,23 +212,25 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                     </div>
                 """
         elif data.get("active_languages"):
+            translated_languages = [
+                translate_language_name(lang) for lang in data["active_languages"]
+            ]
             language_progress_html = f"""
                 <div class="progress-item">
-                    📚 {i18n.get("active_languages", languages=", ".join(data["active_languages"]))}
+                    📚 {i18n.get("active_languages", languages=", ".join(translated_languages))}
                 </div>
             """
 
         member_details.append(
             f"""
             <div class="member-detail">
-                <div class="member-header">
-                    <div class="member-avatar">👤</div>
-                    <div>
-                        <div class="member-title">{html.escape(member_name)}</div>
-                        <div class="member-username">({html.escape(data["username"])})</div>
-                    </div>
-                </div>
-                <div class="progress-item">{streak_text}</div>
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">{html.escape(data.get("name", member_name))}</div>
+                            <div class="member-username">({html.escape(data["username"])})</div>
+                        </div>
+                    </div>                <div class="progress-item">{streak_text}</div>
                 <div class="progress-item">{streak_status}</div>
                 <div class="progress-item">{xp_status}</div>
                 {language_progress_html}

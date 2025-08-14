@@ -12,6 +12,10 @@ from src.config import load_config, get_email_config
 from src.duolingo_api import check_all_family
 from src.data_storage import DataStorage
 from src.report_generator import generate_daily_report, generate_weekly_report
+from src.html_report_generator import (
+    generate_daily_html_report,
+    generate_weekly_html_report,
+)
 from src.email_sender import send_email, should_send_daily, should_send_weekly
 
 
@@ -31,6 +35,11 @@ def main():
         "--check-only",
         action="store_true",
         help="Just check and display current status",
+    )
+    parser.add_argument(
+        "--html",
+        action="store_true",
+        help="Generate HTML reports in addition to text reports",
     )
 
     args = parser.parse_args()
@@ -64,6 +73,14 @@ def main():
             f.write(report)
         print(f"\nDaily report saved to {report_filename}")
 
+        # Generate HTML report if requested
+        if args.html:
+            html_report = generate_daily_html_report(results)
+            html_filename = f"daily_report_{datetime.now().strftime('%Y%m%d')}.html"
+            with open(html_filename, "w") as f:
+                f.write(html_report)
+            print(f"Daily HTML report saved to {html_filename}")
+
     elif args.weekly:
         # Weekly mode: generate comprehensive report
         goals = config.get("goals", {})
@@ -79,6 +96,14 @@ def main():
             f.write(report)
         print(f"\nWeekly report saved to {report_filename}")
 
+        # Generate HTML report if requested
+        if args.html:
+            html_report = generate_weekly_html_report(results, goals)
+            html_filename = f"weekly_report_{datetime.now().strftime('%Y%m%d')}.html"
+            with open(html_filename, "w") as f:
+                f.write(html_report)
+            print(f"Weekly HTML report saved to {html_filename}")
+
         # Also save the data
         storage.save_daily_data(results)
 
@@ -89,6 +114,14 @@ def main():
 
         if args.send_email:
             send_email(report, email_config, "Status Update - ")
+
+        # Generate HTML report if requested
+        if args.html:
+            html_report = generate_daily_html_report(results)
+            html_filename = f"status_report_{datetime.now().strftime('%Y%m%d')}.html"
+            with open(html_filename, "w") as f:
+                f.write(html_report)
+            print(f"\nStatus HTML report saved to {html_filename}")
 
 
 if __name__ == "__main__":

@@ -49,15 +49,27 @@ def load_config() -> dict[str, Any] | None:
         else []
     )
 
+    # Parse display names from comma-separated list (optional)
+    display_names_env = os.getenv("DUOLINGO_DISPLAY_NAMES", "")
+    display_names = (
+        [d.strip() for d in display_names_env.split(",") if d.strip()]
+        if display_names_env
+        else []
+    )
+
     # Create family members dictionary from usernames
     family_members = {}
     if usernames:
         print(f"🌟 Tracking usernames: {', '.join(usernames)}")
-        for username in usernames:
+        for i, username in enumerate(usernames):
             try:
                 validate_username(username)
-                # Use username as the display name if no nickname is provided
-                family_members[username] = {"username": username}
+                # Use display name if provided, otherwise use username
+                display_name = display_names[i] if i < len(display_names) else username
+                family_members[display_name] = {
+                    "username": username,
+                    "display_name": display_name,
+                }
             except ValueError as e:
                 print(f"❌ Invalid username: {e}")
                 return None

@@ -64,3 +64,4 @@ com.duolingo.familyleague.plist
 .env
 league_data
 daily_report_*.txt
+daily_report_*.html
