@@ -321,6 +321,7 @@ pytest tests/ -v
 ### Linting
 
 ```sh
+ruff format
 ruff check --fix
 ty check
 pyright
