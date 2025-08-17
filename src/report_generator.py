@@ -21,9 +21,9 @@ def generate_leaderboard(results: dict[str, Any]) -> list[dict[str, Any]]:
                 }
             )
 
-    # Sort by multiple criteria
+    # Sort by weekly XP first, then total XP, then streak
     leaderboard_data.sort(
-        key=lambda x: (x["streak"], x["weekly_xp"], x["total_xp"]), reverse=True
+        key=lambda x: (x["weekly_xp"], x["total_xp"], x["streak"]), reverse=True
     )
 
     return leaderboard_data
