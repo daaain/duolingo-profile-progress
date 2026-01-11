@@ -18,6 +18,79 @@ from src.html_report_generator import (
     generate_weekly_html_report,
 )
 from src.email_sender import send_email, should_send_daily, should_send_weekly
+from src.i18n import set_global_language, get_language_from_env
+
+
+def generate_index_html(reports_dir: Path) -> str:
+    """Generate an index.html that links to the latest daily and weekly reports"""
+    daily_dir = reports_dir / "daily"
+    weekly_dir = reports_dir / "weekly"
+
+    # Find the latest reports
+    latest_daily = None
+    latest_weekly = None
+
+    if daily_dir.exists():
+        daily_files = sorted(daily_dir.glob("*.html"), reverse=True)
+        if daily_files:
+            latest_daily = daily_files[0].name
+
+    if weekly_dir.exists():
+        weekly_files = sorted(weekly_dir.glob("*.html"), reverse=True)
+        if weekly_files:
+            latest_weekly = weekly_files[0].name
+
+    # Generate simple index page
+    daily_link = (
+        f'<a href="daily/{latest_daily}">Latest Daily Report</a>'
+        if latest_daily
+        else "<span>No daily reports yet</span>"
+    )
+    weekly_link = (
+        f'<a href="weekly/{latest_weekly}">Latest Weekly Report</a>'
+        if latest_weekly
+        else "<span>No weekly reports yet</span>"
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duolingo Family League</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }}
+        h1 {{ color: #58CC02; }}
+        .links {{ margin-top: 30px; }}
+        .links a {{
+            display: block;
+            margin: 15px 0;
+            padding: 15px 30px;
+            background: #58CC02;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+        }}
+        .links a:hover {{ background: #4CAF00; }}
+        .links span {{ color: #999; }}
+    </style>
+</head>
+<body>
+    <h1>🦉 Duolingo Family League</h1>
+    <div class="links">
+        {daily_link}
+        {weekly_link}
+    </div>
+</body>
+</html>
+"""
 
 
 def save_html_report(
@@ -50,16 +123,21 @@ def save_html_report(
     with open(dated_path, "w") as f:
         f.write(html_content)
 
-    # Also save as index.html (latest report)
+    # Generate index page that links to latest reports
+    index_html = generate_index_html(reports_dir)
     index_path = reports_dir / "index.html"
     with open(index_path, "w") as f:
-        f.write(html_content)
+        f.write(index_html)
 
     return str(dated_path)
 
 
 def main():
     """Main execution function"""
+    # Ensure report language is set from environment variable
+    # (must be done before generating reports as i18n module may have loaded earlier)
+    set_global_language(get_language_from_env())
+
     parser = argparse.ArgumentParser(description="Duolingo Family League Tracker")
     parser.add_argument(
         "--daily", action="store_true", help="Run daily check and save data"
@@ -110,7 +188,12 @@ def main():
         print("\n" + report)
 
         if args.send_email or should_send_daily(email_config):
-            send_email(report, email_config, "Daily Update - ")
+            send_email(
+                report,
+                email_config,
+                "Daily Update - ",
+                recipient_list=email_config.get("daily_email_list"),
+            )
 
         # Save report to file
         report_filename = f"daily_report_{datetime.now().strftime('%Y%m%d')}.txt"

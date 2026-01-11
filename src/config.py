@@ -86,12 +86,17 @@ def load_config() -> dict[str, Any] | None:
         print(f"❌ Invalid sender email format: {sender_email}")
         return None
 
+    # Get email lists - daily can be separate, falls back to family list
+    family_email_list = get_validated_email_list("FAMILY_EMAIL_LIST")
+    daily_email_list = get_validated_email_list("DAILY_EMAIL_LIST")
+
     email_settings = {
         "smtp_server": os.getenv("SMTP_SERVER", "smtp.gmail.com"),
         "smtp_port": int(os.getenv("SMTP_PORT", 587)),
         "sender_email": sender_email,
         "sender_password": os.getenv("SENDER_PASSWORD"),
-        "family_email_list": get_validated_email_list(),
+        "family_email_list": family_email_list,
+        "daily_email_list": daily_email_list if daily_email_list else family_email_list,
         "send_daily": os.getenv("SEND_DAILY", "false").lower() == "true",
         "send_weekly": os.getenv("SEND_WEEKLY", "true").lower() == "true",
     }
@@ -162,9 +167,13 @@ def get_email_list() -> list[str]:
     return []
 
 
-def get_validated_email_list() -> list[str]:
-    """Get email list with validation"""
-    email_list_env = os.getenv("FAMILY_EMAIL_LIST", "")
+def get_validated_email_list(env_var: str = "FAMILY_EMAIL_LIST") -> list[str]:
+    """Get email list with validation
+
+    Args:
+        env_var: Environment variable name to read (default: FAMILY_EMAIL_LIST)
+    """
+    email_list_env = os.getenv(env_var, "")
     if not email_list_env:
         return []
 

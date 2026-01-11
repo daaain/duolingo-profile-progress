@@ -68,6 +68,7 @@ jobs:
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           FAMILY_EMAIL_LIST: ${{ secrets.FAMILY_EMAIL_LIST }}
+          DAILY_EMAIL_LIST: ${{ secrets.DAILY_EMAIL_LIST }}
         run: |
           if [ "${{ steps.report-type.outputs.type }}" = "weekly" ]; then
             uv run python duolingo_family_league.py --weekly --html --send-email

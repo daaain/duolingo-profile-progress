@@ -209,6 +209,99 @@ def calculate_weekly_xp_per_language(
         return {}
 
 
+def calculate_daily_xp(username: str, current_total_xp: int) -> int:
+    """Calculate daily XP from historical data (XP earned since yesterday)"""
+    try:
+        from .data_storage import DataStorage
+
+        storage = DataStorage()
+        history = storage.load_history()
+
+        if not history:
+            return 0
+
+        # Get yesterday's date
+        today = datetime.now()
+        yesterday = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Find yesterday's XP
+        yesterday_xp = None
+        for entry in reversed(history):  # Start from most recent
+            entry_date = entry.get("date")
+            if entry_date and entry_date <= yesterday:
+                user_results = entry.get("results", {})
+                for user_key, user_data in user_results.items():
+                    if (
+                        user_data.get("username", "").lower() == username.lower()
+                        or user_key.lower().replace(" ", "_") == username.lower()
+                    ):
+                        yesterday_xp = user_data.get("total_xp", 0)
+                        break
+                if yesterday_xp is not None:
+                    break
+
+        if yesterday_xp is not None:
+            return max(0, current_total_xp - yesterday_xp)
+
+        return 0
+
+    except Exception:
+        return 0
+
+
+def calculate_daily_xp_per_language(
+    username: str, current_language_progress: dict[str, LanguageProgress]
+) -> dict[str, int]:
+    """Calculate daily XP per language from historical data"""
+    try:
+        from .data_storage import DataStorage
+
+        storage = DataStorage()
+        history = storage.load_history()
+
+        if not history:
+            return {}
+
+        # Get yesterday's date
+        today = datetime.now()
+        yesterday = (today - timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Find yesterday's language XP
+        yesterday_languages = None
+        for entry in reversed(history):  # Start from most recent
+            entry_date = entry.get("date")
+            if entry_date and entry_date <= yesterday:
+                user_results = entry.get("results", {})
+                for user_key, user_data in user_results.items():
+                    if (
+                        user_data.get("username", "").lower() == username.lower()
+                        or user_key.lower().replace(" ", "_") == username.lower()
+                    ):
+                        yesterday_languages = user_data.get("language_progress", {})
+                        break
+                if yesterday_languages is not None:
+                    break
+
+        # Calculate daily XP per language
+        daily_xp_per_language: dict[str, int] = {}
+
+        if yesterday_languages:
+            for lang, lang_data in current_language_progress.items():
+                current_xp = lang_data.get("xp", 0)
+                yesterday_lang_xp = yesterday_languages.get(lang, {}).get("xp", 0)
+                daily_xp = max(0, current_xp - yesterday_lang_xp)
+                daily_xp_per_language[lang] = daily_xp
+        else:
+            # No history, can't calculate daily XP
+            for lang in current_language_progress:
+                daily_xp_per_language[lang] = 0
+
+        return daily_xp_per_language
+
+    except Exception:
+        return {}
+
+
 def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
     """Get progress data for a specific user using the unauthenticated API"""
     try:
@@ -273,13 +366,22 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             username, language_progress
         )
 
+        # Calculate daily XP per language
+        daily_xp_per_language = calculate_daily_xp_per_language(
+            username, language_progress
+        )
+
+        total_xp = user.get("totalXp", 0)
+
         return UserProgress(
             username=username,
             name=user.get("name", username),
             streak=streak,
-            total_xp=user.get("totalXp", 0),
-            weekly_xp=calculate_weekly_xp(username, user.get("totalXp", 0)),
+            total_xp=total_xp,
+            weekly_xp=calculate_weekly_xp(username, total_xp),
             weekly_xp_per_language=weekly_xp_per_language,
+            daily_xp=calculate_daily_xp(username, total_xp),
+            daily_xp_per_language=daily_xp_per_language,
             active_languages=active_languages,
             language_progress=language_progress,
             last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -292,6 +394,7 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             language_progress={},
             weekly_xp_per_language={},
+            daily_xp_per_language={},
             active_languages=[],
         )
     except Exception as e:
@@ -301,6 +404,7 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             language_progress={},
             weekly_xp_per_language={},
+            daily_xp_per_language={},
             active_languages=[],
         )
 

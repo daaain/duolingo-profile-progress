@@ -101,6 +101,8 @@ class UserProgress(TypedDict):
     total_xp: int
     weekly_xp: int
     weekly_xp_per_language: dict[str, int]
+    daily_xp: int
+    daily_xp_per_language: dict[str, int]
 
     active_languages: list[str]
     language_progress: dict[str, LanguageProgress]
@@ -115,6 +117,7 @@ class UserProgressError(TypedDict):
     last_check: str
     language_progress: dict[str, LanguageProgress]
     weekly_xp_per_language: dict[str, int]
+    daily_xp_per_language: dict[str, int]
     active_languages: list[str]
 
 

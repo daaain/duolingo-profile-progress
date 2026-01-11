@@ -4,8 +4,18 @@ from datetime import datetime
 from typing import Any
 
 
-def generate_leaderboard(results: dict[str, Any]) -> list[dict[str, Any]]:
-    """Generate family leaderboard"""
+def generate_leaderboard(
+    results: dict[str, Any], sort_by: str = "weekly"
+) -> list[dict[str, Any]]:
+    """Generate family leaderboard
+
+    Args:
+        results: User progress data
+        sort_by: Sort key - 'weekly' for weekly XP, 'daily' for daily XP
+
+    Returns:
+        Sorted leaderboard data
+    """
     leaderboard_data: list[dict[str, Any]] = []
 
     for member_name, data in results.items():
@@ -14,24 +24,26 @@ def generate_leaderboard(results: dict[str, Any]) -> list[dict[str, Any]]:
                 {
                     "name": data.get("name", member_name),
                     "streak": data["streak"],
-                    "weekly_xp": data["weekly_xp"],
-                    "total_xp": data["total_xp"],
+                    "weekly_xp": data.get("weekly_xp", 0),
+                    "daily_xp": data.get("daily_xp", 0),
+                    "total_xp": data.get("total_xp", 0),
                     "target_xp": data.get("total_xp", 0),
                     "data": data,
                 }
             )
 
-    # Sort by weekly XP first, then total XP, then streak
-    leaderboard_data.sort(
-        key=lambda x: (x["weekly_xp"], x["total_xp"], x["streak"]), reverse=True
-    )
+    # Sort by specified XP type first, then streak as tiebreaker
+    if sort_by == "daily":
+        leaderboard_data.sort(key=lambda x: (x["daily_xp"], x["streak"]), reverse=True)
+    else:
+        leaderboard_data.sort(key=lambda x: (x["weekly_xp"], x["streak"]), reverse=True)
 
     return leaderboard_data
 
 
 def generate_daily_report(results: dict[str, Any]) -> str:
     """Generate a concise daily progress report"""
-    leaderboard = generate_leaderboard(results)
+    leaderboard = generate_leaderboard(results, sort_by="daily")
 
     report: list[str] = []
     report.append("📊 DUOLINGO FAMILY LEAGUE - DAILY UPDATE")
@@ -43,13 +55,13 @@ def generate_daily_report(results: dict[str, Any]) -> str:
     report.append("🏆 Today's Standings:")
     for i, member in enumerate(leaderboard, 1):
         emoji = ["🥇", "🥈", "🥉"][i - 1] if i <= 3 else f"{i}."
-        weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
+        daily_xp_per_lang = member["data"].get("daily_xp_per_language", {})
         active_langs = [
-            f"{lang} +{xp}" for lang, xp in weekly_xp_per_lang.items() if xp > 0
+            f"{lang} +{xp}" for lang, xp in daily_xp_per_lang.items() if xp > 0
         ]
         lang_info = f" ({', '.join(active_langs)})" if active_langs else ""
         report.append(
-            f"{emoji} {member['name']}: {member['streak']} day streak | {member['weekly_xp']} weekly XP{lang_info}"
+            f"{emoji} {member['name']}: {member['streak']} day streak | {member['daily_xp']} daily XP{lang_info}"
         )
 
     report.append("")

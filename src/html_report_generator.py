@@ -19,7 +19,7 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     """Generate a daily progress report in HTML format"""
 
     i18n = get_i18n()
-    leaderboard = generate_leaderboard(results)
+    leaderboard = generate_leaderboard(results, sort_by="daily")
 
     # Generate leaderboard items HTML
     leaderboard_items: list[str] = []
@@ -27,11 +27,11 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     for i, member in enumerate(leaderboard, 1):
         emoji = POSITION_EMOJIS[i - 1] if i <= len(POSITION_EMOJIS) else f"{i}."
 
-        # Format language progress
-        weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
+        # Format language progress (using daily XP for daily report)
+        daily_xp_per_lang = member["data"].get("daily_xp_per_language", {})
         active_langs = [
             f"{html.escape(translate_language_name(lang))} +{xp}"
-            for lang, xp in weekly_xp_per_lang.items()
+            for lang, xp in daily_xp_per_lang.items()
             if xp > 0
         ]
         lang_info = f" ({', '.join(active_langs)})" if active_langs else ""
@@ -42,6 +42,9 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
             "day_streak" if streak_count == 1 else "days_streak", count=streak_count
         )
 
+        # Use daily XP for daily report
+        daily_xp = member["data"].get("daily_xp", 0)
+
         leaderboard_items.append(
             f"""
             <li>
@@ -49,7 +52,7 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
                 <div class="member-info">
                     <div class="member-name">{html.escape(member["name"])}</div>
                     <div class="member-stats">
-                        {streak_text} | {i18n.get("weekly_xp", count=member["weekly_xp"])}
+                        {streak_text} | {i18n.get("daily_xp", count=daily_xp)}
                     </div>
                     {f'<div class="language-progress">{lang_info}</div>' if lang_info else ""}
                 </div>
@@ -62,7 +65,7 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     for member_name, data in results.items():
         if "error" not in data and data["streak"] == 0:
             alerts.append(
-                f"<li>• {html.escape(data.get('name', member_name))} {i18n.get('needs_to_practice')}</li>"
+                f"<li>{html.escape(data.get('name', member_name))} {i18n.get('needs_to_practice')}</li>"
             )
 
     if alerts:

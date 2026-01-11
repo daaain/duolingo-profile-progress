@@ -91,8 +91,10 @@ class TestHtmlReportGeneration:
                 "username": "alice_duo",
                 "streak": 15,
                 "weekly_xp": 750,
+                "daily_xp": 150,
                 "total_xp": 12500,
                 "weekly_xp_per_language": {"Spanish": 400, "French": 350},
+                "daily_xp_per_language": {"Spanish": 80, "French": 70},
                 "language_progress": {
                     "Spanish": {
                         "xp": 3200,
@@ -110,8 +112,10 @@ class TestHtmlReportGeneration:
                 "username": "bob_duo",
                 "streak": 8,
                 "weekly_xp": 420,
+                "daily_xp": 100,
                 "total_xp": 8400,
                 "weekly_xp_per_language": {"German": 420},
+                "daily_xp_per_language": {"German": 100},
                 "language_progress": {
                     "German": {
                         "xp": 2400,
@@ -149,8 +153,8 @@ class TestHtmlReportGeneration:
             assert "Alice" in html_report
             assert "Bob" in html_report
             assert "15 days streak" in html_report
-            assert "750 weekly XP" in html_report
-            assert "Spanish +400, French +350" in html_report
+            assert "150 daily XP" in html_report
+            assert "Spanish +80, French +70" in html_report
 
             # Should not include error user in leaderboard
             assert "Charlie" not in html_report
@@ -166,7 +170,7 @@ class TestHtmlReportGeneration:
             assert '<html lang="hu">' in html_report
             assert "DUOLINGO CSALÁDI LIGA" in html_report
             assert "napos sorozat" in html_report
-            assert "heti XP" in html_report
+            assert "napi XP" in html_report
 
     def test_generate_daily_html_report_with_broken_streaks(self):
         """Test daily report with broken streaks"""
@@ -175,8 +179,10 @@ class TestHtmlReportGeneration:
                 "username": "alice_duo",
                 "streak": 0,  # Broken streak
                 "weekly_xp": 100,
+                "daily_xp": 0,
                 "total_xp": 5000,
                 "weekly_xp_per_language": {},
+                "daily_xp_per_language": {},
             }
         }
 
