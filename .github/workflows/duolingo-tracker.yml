@@ -1,0 +1,82 @@
+name: Duolingo Family League Tracker
+
+on:
+  schedule:
+    # Daily at 00:30 UTC (captures full previous day)
+    - cron: '30 0 * * *'
+    # Weekly on Mondays at 00:30 UTC (captures full week Mon-Sun)
+    - cron: '30 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Report type to generate'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Determine report type
+        id: report-type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ inputs.report_type }}" >> $GITHUB_OUTPUT
+          elif [ "$(date -u +%u)" = "1" ]; then
+            # Monday = weekly report (covers Mon-Sun of previous week)
+            echo "type=weekly" >> $GITHUB_OUTPUT
+          else
+            echo "type=daily" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run tracker
+        env:
+          DUOLINGO_USERNAMES: ${{ secrets.DUOLINGO_USERNAMES }}
+          DUOLINGO_DISPLAY_NAMES: ${{ secrets.DUOLINGO_DISPLAY_NAMES }}
+          WEEKLY_XP_GOAL: ${{ secrets.WEEKLY_XP_GOAL }}
+          STREAK_GOAL: ${{ secrets.STREAK_GOAL || '7' }}
+          DUOLINGO_REPORT_LANGUAGE: ${{ vars.DUOLINGO_REPORT_LANGUAGE || 'en' }}
+          STORAGE_BACKEND: gist
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
+          TIMEZONE: ${{ vars.TIMEZONE || 'UTC' }}
+          SMTP_SERVER: smtp.gmail.com
+          SMTP_PORT: 587
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          FAMILY_EMAIL_LIST: ${{ secrets.FAMILY_EMAIL_LIST }}
+        run: |
+          if [ "${{ steps.report-type.outputs.type }}" = "weekly" ]; then
+            uv run python duolingo_family_league.py --weekly --html --send-email
+          else
+            uv run python duolingo_family_league.py --daily --html --send-email
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Update Duolingo report - ${{ steps.report-type.outputs.type }}'

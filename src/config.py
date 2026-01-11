@@ -96,10 +96,41 @@ def load_config() -> dict[str, Any] | None:
         "send_weekly": os.getenv("SEND_WEEKLY", "true").lower() == "true",
     }
 
+    # Storage settings
+    storage_settings = {
+        "backend": os.getenv("STORAGE_BACKEND", "json").lower(),
+        "data_dir": os.getenv("DATA_DIR", "league_data"),
+        "sqlite_db_path": os.getenv("SQLITE_DB_PATH"),
+        "gist_id": os.getenv("GIST_ID"),
+    }
+
+    # Validate storage backend
+    valid_backends = ["json", "sqlite", "gist"]
+    if storage_settings["backend"] not in valid_backends:
+        print(
+            f"❌ Invalid storage backend: {storage_settings['backend']}. "
+            f"Valid options: {', '.join(valid_backends)}"
+        )
+        return None
+
+    # Validate gist backend requirements
+    if storage_settings["backend"] == "gist":
+        if not storage_settings["gist_id"]:
+            print("❌ GIST_ID environment variable required for gist backend")
+            return None
+        if not os.getenv("GITHUB_TOKEN"):
+            print("❌ GITHUB_TOKEN environment variable required for gist backend")
+            return None
+
+    # Timezone setting (for report timestamps)
+    timezone = os.getenv("TIMEZONE", "UTC")
+
     return {
         "family_members": family_members,
         "email_settings": email_settings,
         "goals": goals,
+        "storage_settings": storage_settings,
+        "timezone": timezone,
     }
 
 
@@ -108,6 +139,19 @@ def get_email_config(config: dict[str, Any] | None) -> dict[str, Any]:
     if not config:
         return {}
     return config.get("email_settings", {})
+
+
+def get_storage_config(config: dict[str, Any] | None) -> dict[str, Any]:
+    """Extract storage configuration from config"""
+    default = {
+        "backend": "json",
+        "data_dir": "league_data",
+        "sqlite_db_path": None,
+        "gist_id": None,
+    }
+    if not config:
+        return default
+    return config.get("storage_settings", default)
 
 
 def get_email_list() -> list[str]:

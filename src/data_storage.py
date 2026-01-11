@@ -5,8 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .storage_interface import StorageInterface
 
-class DataStorage:
+
+class DataStorage(StorageInterface):
     def __init__(self, data_dir: str = "league_data") -> None:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
