@@ -17,6 +17,9 @@ on:
           - daily
           - weekly
 
+permissions:
+  contents: write
+
 jobs:
   track:
     runs-on: ubuntu-latest
