@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any, cast
 
 from .data_storage import DataStorage
 from .sqlite_storage import SQLiteStorage
@@ -197,10 +198,10 @@ class StorageMigrator:
 
                 # Check core fields for each user
                 for username in source_results:
-                    source_user = source_results[username]
-                    target_user = target_results[username]
+                    source_user = cast(dict[str, Any], source_results[username])
+                    target_user = cast(dict[str, Any], target_results[username])
 
-                    if isinstance(source_user, dict) and "error" in source_user:
+                    if "error" in source_user:
                         continue  # Skip error entries
 
                     core_fields = ["streak", "total_xp", "weekly_xp"]

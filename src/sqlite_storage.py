@@ -4,7 +4,7 @@ import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .storage_interface import StorageInterface
 
@@ -101,11 +101,13 @@ class SQLiteStorage(StorageInterface):
 
             # Insert user progress data
             for username, user_data in results.items():
-                if isinstance(user_data, dict) and "error" in user_data:
+                data = cast(dict[str, Any], user_data)
+                if "error" in data:
                     # Handle error case
+                    last_check: str = data.get("last_check", timestamp)
                     cursor = conn.execute(
                         """
-                        INSERT INTO user_progress 
+                        INSERT INTO user_progress
                         (snapshot_id, username, name, streak, total_xp, weekly_xp, last_check, error)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
@@ -116,26 +118,26 @@ class SQLiteStorage(StorageInterface):
                             0,
                             0,
                             0,
-                            user_data.get("last_check", timestamp),
-                            user_data["error"],
+                            last_check,
+                            data["error"],
                         ),
                     )
                 else:
                     # Handle successful user data
                     cursor = conn.execute(
                         """
-                        INSERT INTO user_progress 
+                        INSERT INTO user_progress
                         (snapshot_id, username, name, streak, total_xp, weekly_xp, last_check, error)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                         (
                             snapshot_id,
-                            user_data["username"],
-                            user_data["name"],
-                            user_data["streak"],
-                            user_data["total_xp"],
-                            user_data["weekly_xp"],
-                            user_data["last_check"],
+                            data["username"],
+                            data["name"],
+                            data["streak"],
+                            data["total_xp"],
+                            data["weekly_xp"],
+                            data["last_check"],
                             None,
                         ),
                     )
@@ -143,15 +145,17 @@ class SQLiteStorage(StorageInterface):
                     user_progress_id = cursor.lastrowid
 
                     # Insert language progress
-                    for language, lang_data in user_data.get(
-                        "language_progress", {}
-                    ).items():
-                        weekly_xp = user_data.get("weekly_xp_per_language", {}).get(
-                            language, 0
-                        )
+                    lang_progress = cast(
+                        dict[str, dict[str, Any]], data.get("language_progress", {})
+                    )
+                    weekly_xp_per_lang = cast(
+                        dict[str, int], data.get("weekly_xp_per_language", {})
+                    )
+                    for language, lang_data in lang_progress.items():
+                        weekly_xp: int = weekly_xp_per_lang.get(language, 0)
                         conn.execute(
                             """
-                            INSERT INTO language_progress 
+                            INSERT INTO language_progress
                             (user_progress_id, language, xp, from_language, learning_language, weekly_xp)
                             VALUES (?, ?, ?, ?, ?, ?)
                         """,
@@ -179,14 +183,14 @@ class SQLiteStorage(StorageInterface):
         """Load historical data from SQLite"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
-                SELECT date, timestamp, data 
-                FROM daily_snapshots 
+                SELECT date, timestamp, data
+                FROM daily_snapshots
                 ORDER BY date ASC
             """)
 
-            history = []
+            history: list[dict[str, Any]] = []
             for date, timestamp, data_json in cursor.fetchall():
-                results = json.loads(data_json)
+                results: dict[str, Any] = json.loads(data_json)
                 history.append(
                     {"date": date, "timestamp": timestamp, "results": results}
                 )
@@ -197,15 +201,15 @@ class SQLiteStorage(StorageInterface):
         """Get progress data for the current week"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("""
-                SELECT date, timestamp, data 
-                FROM daily_snapshots 
-                ORDER BY date DESC 
+                SELECT date, timestamp, data
+                FROM daily_snapshots
+                ORDER BY date DESC
                 LIMIT 7
             """)
 
-            weekly_data = []
+            weekly_data: list[dict[str, Any]] = []
             for date, timestamp, data_json in cursor.fetchall():
-                results = json.loads(data_json)
+                results: dict[str, Any] = json.loads(data_json)
                 weekly_data.append(
                     {"date": date, "timestamp": timestamp, "results": results}
                 )
@@ -230,7 +234,7 @@ class SQLiteStorage(StorageInterface):
                 (username, days),
             )
 
-            history = []
+            history: list[dict[str, Any]] = []
             for (
                 date,
                 timestamp,
@@ -239,7 +243,7 @@ class SQLiteStorage(StorageInterface):
                 weekly_xp,
                 error,
             ) in cursor.fetchall():
-                entry = {
+                entry: dict[str, Any] = {
                     "date": date,
                     "timestamp": timestamp,
                     "streak": streak,
@@ -270,7 +274,7 @@ class SQLiteStorage(StorageInterface):
                 (username, language, days),
             )
 
-            history = []
+            history: list[dict[str, Any]] = []
             for date, timestamp, xp, weekly_xp in cursor.fetchall():
                 history.append(
                     {
