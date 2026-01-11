@@ -3,26 +3,29 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
 from typing import Any
 
 
 def send_email(
     report: str,
     email_config: dict[str, Any],
-    subject_prefix: str = "",
+    subject: str | None = None,
     recipient_list: list[str] | None = None,
+    html_content: str | None = None,
 ) -> bool:
     """Send report via email
 
     Args:
-        report: The report content to send
+        report: The report content to send (plain text)
         email_config: Email configuration dictionary
-        subject_prefix: Prefix for the email subject
+        subject: Email subject line (required)
         recipient_list: Optional override for recipients (defaults to family_email_list)
+        html_content: Optional HTML version of the report
     """
     try:
-        recipients = recipient_list or email_config.get("family_email_list")
+        recipients: list[str] = (
+            recipient_list or email_config.get("family_email_list") or []
+        )
         if not all(
             [
                 email_config.get("smtp_server"),
@@ -36,14 +39,17 @@ def send_email(
             )
             return False
 
-        msg = MIMEMultipart()
+        msg = MIMEMultipart("alternative")
         msg["From"] = email_config["sender_email"]
         msg["To"] = ", ".join(recipients)
-        msg["Subject"] = (
-            f"Duolingo Family League - {subject_prefix}{datetime.now().strftime('%B %d, %Y')}"
-        )
+        msg["Subject"] = subject or "Duolingo Family League Report"
 
-        msg.attach(MIMEText(report, "plain"))
+        # Attach plain text version first (fallback)
+        msg.attach(MIMEText(report, "plain", "utf-8"))
+
+        # Attach HTML version if provided (preferred by email clients)
+        if html_content:
+            msg.attach(MIMEText(html_content, "html", "utf-8"))
 
         server = smtplib.SMTP(email_config["smtp_server"], email_config["smtp_port"])
         server.starttls()
@@ -52,7 +58,7 @@ def send_email(
         server.sendmail(email_config["sender_email"], recipients, text)
         server.quit()
 
-        print(f"✅ {subject_prefix}report email sent successfully!")
+        print("✅ Report email sent successfully!")
         return True
 
     except Exception as e:

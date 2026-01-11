@@ -18,7 +18,7 @@ from src.html_report_generator import (
     generate_weekly_html_report,
 )
 from src.email_sender import send_email, should_send_daily, should_send_weekly
-from src.i18n import set_global_language, get_language_from_env
+from src.i18n import set_global_language, get_language_from_env, get_i18n
 
 
 def generate_index_html(reports_dir: Path) -> str:
@@ -178,8 +178,11 @@ def main():
         gist_id=storage_config.get("gist_id"),
     )
 
+    # Load history once for XP calculations
+    history = storage.load_history()
+
     # Check all family members
-    results = check_all_family(config)
+    results = check_all_family(config, history)
 
     if args.daily:
         # Daily mode: save data and optionally send daily report
@@ -187,12 +190,19 @@ def main():
         report = generate_daily_report(results)
         print("\n" + report)
 
+        # Generate HTML report (always needed for emails with i18n support)
+        html_report = generate_daily_html_report(results)
+
         if args.send_email or should_send_daily(email_config):
+            i18n = get_i18n()
+            current_date = datetime.now().strftime(i18n.get("date_format"))
+            subject = i18n.get("email_subject_daily", date=current_date)
             send_email(
                 report,
                 email_config,
-                "Daily Update - ",
+                subject=subject,
                 recipient_list=email_config.get("daily_email_list"),
+                html_content=html_report,
             )
 
         # Save report to file
@@ -201,9 +211,8 @@ def main():
             f.write(report)
         print(f"\nDaily report saved to {report_filename}")
 
-        # Generate HTML report if requested
+        # Save HTML report if requested
         if args.html:
-            html_report = generate_daily_html_report(results)
             date_str = datetime.now().strftime("%Y%m%d")
             html_path = save_html_report(html_report, "daily", date_str)
             print(f"Daily HTML report saved to {html_path}")
@@ -215,8 +224,19 @@ def main():
         report = generate_weekly_report(results, goals)
         print("\n" + report)
 
+        # Generate HTML report (always needed for emails with i18n support)
+        html_report = generate_weekly_html_report(results, goals)
+
         if args.send_email or should_send_weekly(email_config):
-            send_email(report, email_config, "Weekly Report - ")
+            i18n = get_i18n()
+            current_date = datetime.now().strftime(i18n.get("date_format"))
+            subject = i18n.get("email_subject_weekly", date=current_date)
+            send_email(
+                report,
+                email_config,
+                subject=subject,
+                html_content=html_report,
+            )
 
         # Save report to file
         report_filename = f"weekly_report_{datetime.now().strftime('%Y%m%d')}.txt"
@@ -224,9 +244,8 @@ def main():
             f.write(report)
         print(f"\nWeekly report saved to {report_filename}")
 
-        # Generate HTML report if requested
+        # Save HTML report if requested
         if args.html:
-            html_report = generate_weekly_html_report(results, goals)
             date_str = datetime.now().strftime("%Y%m%d")
             html_path = save_html_report(html_report, "weekly", date_str)
             print(f"Weekly HTML report saved to {html_path}")
@@ -241,7 +260,16 @@ def main():
         print("\n" + report)
 
         if args.send_email:
-            send_email(report, email_config, "Status Update - ")
+            html_report = generate_daily_html_report(results)
+            i18n = get_i18n()
+            current_date = datetime.now().strftime(i18n.get("date_format"))
+            subject = i18n.get("email_subject_daily", date=current_date)
+            send_email(
+                report,
+                email_config,
+                subject=subject,
+                html_content=html_report,
+            )
 
         # Generate HTML report if requested
         if args.html:

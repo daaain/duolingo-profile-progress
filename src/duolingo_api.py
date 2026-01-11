@@ -51,13 +51,22 @@ def make_api_request_with_retry(
     raise requests.RequestException("Max retries exceeded")
 
 
-def calculate_weekly_xp(username: str, current_total_xp: int) -> int:
-    """Calculate weekly XP from historical data (total across all languages)"""
-    try:
-        from .data_storage import DataStorage
+def calculate_weekly_xp(
+    username: str, current_total_xp: int, history: list[dict[str, Any]] | None = None
+) -> int:
+    """Calculate weekly XP from historical data (total across all languages)
 
-        storage = DataStorage()
-        history = storage.load_history()
+    Args:
+        username: The Duolingo username
+        current_total_xp: Current total XP for the user
+        history: Optional pre-loaded history data. If None, loads from default JSON storage.
+    """
+    try:
+        if history is None:
+            from .data_storage import DataStorage
+
+            storage = DataStorage()
+            history = storage.load_history()
 
         if not history:
             return 0
@@ -122,14 +131,23 @@ def calculate_weekly_xp(username: str, current_total_xp: int) -> int:
 
 
 def calculate_weekly_xp_per_language(
-    username: str, current_language_progress: dict[str, LanguageProgress]
+    username: str,
+    current_language_progress: dict[str, LanguageProgress],
+    history: list[dict[str, Any]] | None = None,
 ) -> dict[str, int]:
-    """Calculate weekly XP per language from historical data"""
-    try:
-        from .data_storage import DataStorage
+    """Calculate weekly XP per language from historical data
 
-        storage = DataStorage()
-        history = storage.load_history()
+    Args:
+        username: The Duolingo username
+        current_language_progress: Current language progress data
+        history: Optional pre-loaded history data. If None, loads from default JSON storage.
+    """
+    try:
+        if history is None:
+            from .data_storage import DataStorage
+
+            storage = DataStorage()
+            history = storage.load_history()
 
         if not history:
             return {}
@@ -209,13 +227,22 @@ def calculate_weekly_xp_per_language(
         return {}
 
 
-def calculate_daily_xp(username: str, current_total_xp: int) -> int:
-    """Calculate daily XP from historical data (XP earned since yesterday)"""
-    try:
-        from .data_storage import DataStorage
+def calculate_daily_xp(
+    username: str, current_total_xp: int, history: list[dict[str, Any]] | None = None
+) -> int:
+    """Calculate daily XP from historical data (XP earned since yesterday)
 
-        storage = DataStorage()
-        history = storage.load_history()
+    Args:
+        username: The Duolingo username
+        current_total_xp: Current total XP for the user
+        history: Optional pre-loaded history data. If None, loads from default JSON storage.
+    """
+    try:
+        if history is None:
+            from .data_storage import DataStorage
+
+            storage = DataStorage()
+            history = storage.load_history()
 
         if not history:
             return 0
@@ -250,14 +277,23 @@ def calculate_daily_xp(username: str, current_total_xp: int) -> int:
 
 
 def calculate_daily_xp_per_language(
-    username: str, current_language_progress: dict[str, LanguageProgress]
+    username: str,
+    current_language_progress: dict[str, LanguageProgress],
+    history: list[dict[str, Any]] | None = None,
 ) -> dict[str, int]:
-    """Calculate daily XP per language from historical data"""
-    try:
-        from .data_storage import DataStorage
+    """Calculate daily XP per language from historical data
 
-        storage = DataStorage()
-        history = storage.load_history()
+    Args:
+        username: The Duolingo username
+        current_language_progress: Current language progress data
+        history: Optional pre-loaded history data. If None, loads from default JSON storage.
+    """
+    try:
+        if history is None:
+            from .data_storage import DataStorage
+
+            storage = DataStorage()
+            history = storage.load_history()
 
         if not history:
             return {}
@@ -302,8 +338,15 @@ def calculate_daily_xp_per_language(
         return {}
 
 
-def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
-    """Get progress data for a specific user using the unauthenticated API"""
+def get_user_progress(
+    username: str, history: list[dict[str, Any]] | None = None
+) -> Union[UserProgress, UserProgressError]:
+    """Get progress data for a specific user using the unauthenticated API
+
+    Args:
+        username: The Duolingo username
+        history: Optional pre-loaded history data for XP calculations
+    """
     try:
         # Use the unauthenticated API endpoint
         url = f"https://www.duolingo.com/2017-06-30/users?username={username}"
@@ -332,6 +375,7 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
                 last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 language_progress={},
                 weekly_xp_per_language={},
+                daily_xp_per_language={},
                 active_languages=[],
             )
 
@@ -363,12 +407,12 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
 
         # Calculate weekly XP per language
         weekly_xp_per_language = calculate_weekly_xp_per_language(
-            username, language_progress
+            username, language_progress, history
         )
 
         # Calculate daily XP per language
         daily_xp_per_language = calculate_daily_xp_per_language(
-            username, language_progress
+            username, language_progress, history
         )
 
         total_xp = user.get("totalXp", 0)
@@ -378,9 +422,9 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
             name=user.get("name", username),
             streak=streak,
             total_xp=total_xp,
-            weekly_xp=calculate_weekly_xp(username, total_xp),
+            weekly_xp=calculate_weekly_xp(username, total_xp, history),
             weekly_xp_per_language=weekly_xp_per_language,
-            daily_xp=calculate_daily_xp(username, total_xp),
+            daily_xp=calculate_daily_xp(username, total_xp, history),
             daily_xp_per_language=daily_xp_per_language,
             active_languages=active_languages,
             language_progress=language_progress,
@@ -411,8 +455,15 @@ def get_user_progress(username: str) -> Union[UserProgress, UserProgressError]:
 
 def check_all_family(
     config: dict[str, Any] | None,
+    history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Union[UserProgress, UserProgressError]]:
-    """Check progress for all family members"""
+    """Check progress for all family members
+
+    Args:
+        config: Configuration dictionary
+        history: Optional pre-loaded history data for XP calculations.
+                 If None, XP calculations will load from default JSON storage.
+    """
     results: dict[str, Union[UserProgress, UserProgressError]] = {}
 
     if not config:
@@ -438,7 +489,7 @@ def check_all_family(
     with ThreadPoolExecutor(max_workers=5) as executor:
         # Submit all requests
         future_to_member = {
-            executor.submit(get_user_progress, username): member_name
+            executor.submit(get_user_progress, username, history): member_name
             for member_name, username in users_to_check.items()
         }
 
@@ -469,6 +520,7 @@ def check_all_family(
                     last_check=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     language_progress={},
                     weekly_xp_per_language={},
+                    daily_xp_per_language={},
                     active_languages=[],
                 )
 
