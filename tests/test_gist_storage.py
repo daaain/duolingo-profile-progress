@@ -208,8 +208,8 @@ class TestGistStorage:
         for i in range(10):
             history.append(
                 {
-                    "date": f"2025-08-{5+i:02d}",
-                    "timestamp": f"2025-08-{5+i:02d}T10:00:00",
+                    "date": f"2025-08-{5 + i:02d}",
+                    "timestamp": f"2025-08-{5 + i:02d}T10:00:00",
                     "results": {"test_user": {"streak": i}},
                 }
             )

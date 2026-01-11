@@ -27,7 +27,9 @@ class GistStorage(StorageInterface):
         self.github_token = github_token or os.getenv("GITHUB_TOKEN")
 
         if not self.gist_id:
-            raise ValueError("GIST_ID environment variable or gist_id parameter required")
+            raise ValueError(
+                "GIST_ID environment variable or gist_id parameter required"
+            )
         if not self.github_token:
             raise ValueError(
                 "GITHUB_TOKEN environment variable or github_token parameter required"

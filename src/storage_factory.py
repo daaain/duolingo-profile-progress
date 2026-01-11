@@ -49,12 +49,12 @@ class StorageFactory:
             raise ValueError(
                 f"Unknown storage backend: {backend}. Supported: 'json', 'sqlite', 'gist'"
             )
-    
+
     @staticmethod
     def get_available_backends() -> list[str]:
         """Get list of available storage backends"""
         return ["json", "sqlite", "gist"]
-    
+
     @staticmethod
     def get_default_backend() -> str:
         """Get the default storage backend"""

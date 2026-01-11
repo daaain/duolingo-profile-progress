@@ -20,6 +20,7 @@ on:
 jobs:
   track:
     runs-on: ubuntu-latest
+    environment: action
 
     steps:
       - name: Checkout repository
