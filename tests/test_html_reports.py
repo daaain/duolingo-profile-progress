@@ -154,7 +154,9 @@ class TestHtmlReportGeneration:
             assert "Bob" in html_report
             assert "15 days streak" in html_report
             assert "150 daily XP" in html_report
-            assert "Spanish +80, French +70" in html_report
+            assert (
+                "French +70 (350 this week), Spanish +80 (400 this week)" in html_report
+            )
 
             # Should not include error user in leaderboard
             assert "Charlie" not in html_report

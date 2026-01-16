@@ -56,9 +56,15 @@ def generate_daily_report(results: dict[str, Any]) -> str:
     for i, member in enumerate(leaderboard, 1):
         emoji = ["🥇", "🥈", "🥉"][i - 1] if i <= 3 else f"{i}."
         daily_xp_per_lang = member["data"].get("daily_xp_per_language", {})
-        active_langs = [
-            f"{lang} +{xp}" for lang, xp in daily_xp_per_lang.items() if xp > 0
-        ]
+        weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
+        # Get all languages with weekly XP > 0
+        all_langs = set(daily_xp_per_lang.keys()) | set(weekly_xp_per_lang.keys())
+        active_langs: list[str] = []
+        for lang in sorted(all_langs):
+            weekly_xp = weekly_xp_per_lang.get(lang, 0)
+            if weekly_xp > 0:
+                daily_xp = daily_xp_per_lang.get(lang, 0)
+                active_langs.append(f"{lang} +{daily_xp} ({weekly_xp} this week)")
         lang_info = f" ({', '.join(active_langs)})" if active_langs else ""
         report.append(
             f"{emoji} {member['name']}: {member['streak']} day streak | {member['daily_xp']} daily XP{lang_info}"

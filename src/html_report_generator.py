@@ -27,13 +27,20 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     for i, member in enumerate(leaderboard, 1):
         emoji = POSITION_EMOJIS[i - 1] if i <= len(POSITION_EMOJIS) else f"{i}."
 
-        # Format language progress (using daily XP for daily report)
+        # Format language progress (using daily XP and weekly totals)
         daily_xp_per_lang = member["data"].get("daily_xp_per_language", {})
-        active_langs = [
-            f"{html.escape(translate_language_name(lang))} +{xp}"
-            for lang, xp in daily_xp_per_lang.items()
-            if xp > 0
-        ]
+        weekly_xp_per_lang = member["data"].get("weekly_xp_per_language", {})
+        # Get all languages with weekly XP > 0
+        all_langs = set(daily_xp_per_lang.keys()) | set(weekly_xp_per_lang.keys())
+        active_langs: list[str] = []
+        for lang in sorted(all_langs):
+            weekly_xp = weekly_xp_per_lang.get(lang, 0)
+            if weekly_xp > 0:
+                daily_xp = daily_xp_per_lang.get(lang, 0)
+                weekly_text = i18n.get("week_so_far", xp=weekly_xp)
+                active_langs.append(
+                    f"{html.escape(translate_language_name(lang))} +{daily_xp} ({weekly_text})"
+                )
         lang_info = f" ({', '.join(active_langs)})" if active_langs else ""
 
         # Format streak text
