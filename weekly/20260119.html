@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duolingo Családi Liga - Heti Jelentés</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #58CC02;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #777;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .date-info {
+            text-align: center;
+            color: #58CC02;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            color: #58CC02;
+            border-bottom: 3px solid #58CC02;
+            padding-bottom: 8px;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        .leaderboard {
+            display: grid;
+            gap: 15px;
+        }
+        .leaderboard-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 5px solid #58CC02;
+        }
+        .leaderboard-item.first {
+            border-left-color: #FFD700;
+            background: linear-gradient(135deg, #fff9e6 0%, #f8f9fa 100%);
+        }
+        .leaderboard-item.second {
+            border-left-color: #C0C0C0;
+        }
+        .leaderboard-item.third {
+            border-left-color: #CD7F32;
+        }
+        .position {
+            font-size: 24px;
+            float: left;
+            margin-right: 15px;
+            line-height: 1;
+        }
+        .member-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .member-stats {
+            color: #666;
+            font-size: 14px;
+        }
+        .detailed-progress {
+            display: grid;
+            gap: 25px;
+        }
+        .member-detail {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .member-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .member-avatar {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        .member-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .member-username {
+            font-size: 14px;
+            color: #666;
+        }
+        .progress-item {
+            margin: 8px 0;
+            padding: 8px 0;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+        .status-badge.achieved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-badge.warning {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .language-list {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        .language-item {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .language-name {
+            font-weight: bold;
+            color: #58CC02;
+        }
+        .goals-section {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f8f9fa 100%);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #58CC02;
+        }
+        .goals-list {
+            list-style: none;
+            padding: 0;
+        }
+        .goals-list li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .goals-list li::before {
+            content: "🎯";
+            position: absolute;
+            left: 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 DUOLINGO CSALÁDI LIGA - HETI JELENTÉS</h1>
+        <div class="subtitle">Átfogó heti családi előrehaladási jelentés</div>
+        <div class="date-info">
+            Hét vége: 2026. 01. 19.<br>
+            Létrehozva: 2026. 01. 19. 00:47:46
+        </div>
+        
+        <div class="section">
+            <h2>🥇 CSALÁDI RANGLISTA</h2>
+            <div class="leaderboard">
+                <div class="leaderboard-item first">
+                <div class="position">🥇</div>
+                <div class="member-name">Daniel</div>
+                <div class="member-stats">
+                    444 napos sorozat | 392 heti XP | 248,719 összes XP
+                </div>
+            </div><div class="leaderboard-item second">
+                <div class="position">🥈</div>
+                <div class="member-name">Dius</div>
+                <div class="member-stats">
+                    360 napos sorozat | 50 heti XP | 51,062 összes XP
+                </div>
+            </div><div class="leaderboard-item third">
+                <div class="position">🥉</div>
+                <div class="member-name">A. KRHN</div>
+                <div class="member-stats">
+                    56 napos sorozat | 47 heti XP | 94,013 összes XP
+                </div>
+            </div><div class="leaderboard-item ">
+                <div class="position">4.</div>
+                <div class="member-name">CheezeGamer</div>
+                <div class="member-stats">
+                    5 napos sorozat | 0 heti XP | 28,570 összes XP
+                </div>
+            </div><div class="leaderboard-item ">
+                <div class="position">5.</div>
+                <div class="member-name">Ildikó Demmelné Kocsis</div>
+                <div class="member-stats">
+                    0 napos sorozat | 0 heti XP | 75,605 összes XP
+                </div>
+            </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 RÉSZLETES ELŐREHALADÁS</h2>
+            <div class="detailed-progress">
+                <div class="member-detail">
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">Daniel</div>
+                            <div class="member-username">(daaain)</div>
+                        </div>
+                    </div>                <div class="progress-item">Jelenlegi sorozat: 444 nap</div>
+                <div class="progress-item"><span class="status-badge achieved">🔥 SOROZAT CÉL TELJESÍTVE!</span></div>
+                <div class="progress-item"><span class="status-badge progress">📈 Heti XP előrehaladás: 392/500</span></div>
+                
+                    <div class="progress-item">
+                        📚 Nyelvi Előrehaladás:
+                        <div class="language-list">
+                            <div class="language-item">
+                                <span class="language-name">Spanyol:</span> 
+                                247,126 XP 
+                                (+392 ezen a héten)
+                            </div><div class="language-item">
+                                <span class="language-name">Catalan:</span> 
+                                1,236 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Francia:</span> 
+                                357 XP
+                            </div>
+                        </div>
+                    </div>
+                
+            </div><div class="member-detail">
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">CheezeGamer</div>
+                            <div class="member-username">(CheezeGamer)</div>
+                        </div>
+                    </div>                <div class="progress-item">Jelenlegi sorozat: 5 nap</div>
+                <div class="progress-item"><span class="status-badge progress">⚡ Jó előrehaladás a 7-napos cél felé</span></div>
+                <div class="progress-item"><span class="status-badge progress">📈 Heti XP előrehaladás: 0/500</span></div>
+                
+                    <div class="progress-item">
+                        📚 Nyelvi Előrehaladás:
+                        <div class="language-list">
+                            <div class="language-item">
+                                <span class="language-name">Magyar:</span> 
+                                1,940 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Német:</span> 
+                                16,086 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Holland:</span> 
+                                53 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Spanyol:</span> 
+                                9,500 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Japán:</span> 
+                                677 XP
+                            </div><div class="language-item">
+                                <span class="language-name">Kínai:</span> 
+                                314 XP
+                            </div>
+                        </div>
+                    </div>
+                
+            </div><div class="member-detail">
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">A. KRHN</div>
+                            <div class="member-username">(multec)</div>
+                        </div>
+                    </div>                <div class="progress-item">Jelenlegi sorozat: 56 nap</div>
+                <div class="progress-item"><span class="status-badge achieved">🔥 SOROZAT CÉL TELJESÍTVE!</span></div>
+                <div class="progress-item"><span class="status-badge progress">📈 Heti XP előrehaladás: 47/500</span></div>
+                
+                    <div class="progress-item">
+                        📚 Nyelvi Előrehaladás:
+                        <div class="language-list">
+                            <div class="language-item">
+                                <span class="language-name">Angol:</span> 
+                                94,013 XP 
+                                (+47 ezen a héten)
+                            </div>
+                        </div>
+                    </div>
+                
+            </div><div class="member-detail">
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">Dius</div>
+                            <div class="member-username">(Dius300371)</div>
+                        </div>
+                    </div>                <div class="progress-item">Jelenlegi sorozat: 360 nap</div>
+                <div class="progress-item"><span class="status-badge achieved">🔥 SOROZAT CÉL TELJESÍTVE!</span></div>
+                <div class="progress-item"><span class="status-badge progress">📈 Heti XP előrehaladás: 50/500</span></div>
+                
+                    <div class="progress-item">
+                        📚 Nyelvi Előrehaladás:
+                        <div class="language-list">
+                            <div class="language-item">
+                                <span class="language-name">Angol:</span> 
+                                51,062 XP 
+                                (+50 ezen a héten)
+                            </div>
+                        </div>
+                    </div>
+                
+            </div><div class="member-detail">
+                    <div class="member-header">
+                        <div class="member-avatar">👤</div>
+                        <div>
+                            <div class="member-title">Ildikó Demmelné Kocsis</div>
+                            <div class="member-username">(IldikDemme)</div>
+                        </div>
+                    </div>                <div class="progress-item">Jelenlegi sorozat: 0 nap</div>
+                <div class="progress-item"><span class="status-badge warning">⚠️ További munka szükséges a 7-napos sorozat céljához</span></div>
+                <div class="progress-item"><span class="status-badge progress">📈 Heti XP előrehaladás: 0/500</span></div>
+                
+                    <div class="progress-item">
+                        📚 Nyelvi Előrehaladás:
+                        <div class="language-list">
+                            <div class="language-item">
+                                <span class="language-name">Angol:</span> 
+                                75,605 XP
+                            </div>
+                        </div>
+                    </div>
+                
+            </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="goals-section">
+                <h2>🎯 E HETI CSALÁDI CÉLOK</h2>
+                <ul class="goals-list">
+                    <li>Tartsátok fenn a 7-napos sorozatot</li><li>Szerezzetek 500 XP-t ezen a héten</li><li>Próbáljátok megdönteni a személyes rekordotokat!</li>
+                </ul>
+                <div style="text-align: center; margin-top: 20px; font-weight: bold; color: #58CC02;">
+                    Csak így tovább, mindenki! 🌟
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Folytassátok a tanulást! 🌟
+        </div>
+    </div>
+</body>
+</html>
