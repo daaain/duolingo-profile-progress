@@ -416,3 +416,160 @@ class TestWeeklyXPPerLanguage:
 
         assert result["Spanish"] == 657  # 181589 - 180932
         assert result["French"] == 0  # 357 - 357
+
+
+class TestReferenceDateParameter:
+    """Test reference_date parameter for weekly XP calculations"""
+
+    def test_calculate_weekly_xp_with_reference_date_shifts_week_boundary(self):
+        """Test that reference_date shifts the week boundary correctly.
+
+        When the weekly report runs on Monday morning (e.g., Jan 19),
+        using reference_date = yesterday (Sunday Jan 18) should use
+        the week starting Jan 12, not Jan 19.
+        """
+        # Simulate data collected during the previous week
+        history = [
+            {
+                "date": "2026-01-11",  # Saturday before the week
+                "results": {
+                    "cheezegamer": {"username": "cheezegamer", "total_xp": 28272}
+                },
+            },
+            {
+                "date": "2026-01-13",  # Monday of the week
+                "results": {
+                    "cheezegamer": {"username": "cheezegamer", "total_xp": 28295}
+                },
+            },
+            {
+                "date": "2026-01-15",  # Wednesday
+                "results": {
+                    "cheezegamer": {"username": "cheezegamer", "total_xp": 28570}
+                },
+            },
+            {
+                "date": "2026-01-18",  # Sunday (end of week)
+                "results": {
+                    "cheezegamer": {"username": "cheezegamer", "total_xp": 28570}
+                },
+            },
+        ]
+
+        current_total_xp = 28570  # Same as Sunday's XP
+
+        # Without reference_date on Monday Jan 19: week_start = Jan 19
+        # Baseline would be Jan 18 (28570), result = 28570 - 28570 = 0
+        monday_jan_19 = datetime(2026, 1, 19)
+        result_without_ref = calculate_weekly_xp(
+            "cheezegamer",
+            current_total_xp,
+            history,
+            reference_date=monday_jan_19,
+        )
+        assert result_without_ref == 0  # BUG: Reports 0 because baseline is same day
+
+        # With reference_date = Sunday Jan 18: week_start = Jan 12
+        # Baseline should be Jan 11 (28272), result = 28570 - 28272 = 298
+        sunday_jan_18 = datetime(2026, 1, 18)
+        result_with_ref = calculate_weekly_xp(
+            "cheezegamer",
+            current_total_xp,
+            history,
+            reference_date=sunday_jan_18,
+        )
+        assert result_with_ref == 298  # CORRECT: Uses previous week's baseline
+
+    def test_calculate_weekly_xp_per_language_with_reference_date(self):
+        """Test that reference_date works correctly for per-language XP."""
+        history = [
+            {
+                "date": "2026-01-11",  # Saturday before the week
+                "results": {
+                    "testuser": {
+                        "username": "testuser",
+                        "language_progress": {
+                            "Spanish": {"xp": 5000},
+                            "French": {"xp": 2000},
+                        },
+                    }
+                },
+            },
+            {
+                "date": "2026-01-15",  # Wednesday
+                "results": {
+                    "testuser": {
+                        "username": "testuser",
+                        "language_progress": {
+                            "Spanish": {"xp": 5500},
+                            "French": {"xp": 2200},
+                        },
+                    }
+                },
+            },
+        ]
+
+        current_languages = {
+            "Spanish": {"xp": 5500, "from_language": "en", "learning_language": "es"},
+            "French": {"xp": 2200, "from_language": "en", "learning_language": "fr"},
+        }
+
+        # With reference_date = Sunday Jan 18: week_start = Jan 12
+        # Baseline should be Jan 11
+        sunday_jan_18 = datetime(2026, 1, 18)
+        result = calculate_weekly_xp_per_language(
+            "testuser",
+            current_languages,
+            history,
+            reference_date=sunday_jan_18,
+        )
+
+        assert result["Spanish"] == 500  # 5500 - 5000
+        assert result["French"] == 200  # 2200 - 2000
+
+    def test_reference_date_none_uses_current_datetime(self):
+        """Test that reference_date=None uses current datetime (default behavior)."""
+        today = datetime.now()
+        monday = today - timedelta(days=today.weekday())
+        last_sunday = monday - timedelta(days=1)
+
+        history = [
+            {
+                "date": last_sunday.strftime("%Y-%m-%d"),
+                "results": {"testuser": {"username": "testuser", "total_xp": 1000}},
+            }
+        ]
+
+        # Both should give the same result when reference_date=None
+        result_none = calculate_weekly_xp(
+            "testuser", 1500, history, reference_date=None
+        )
+        result_now = calculate_weekly_xp(
+            "testuser", 1500, history, reference_date=datetime.now()
+        )
+
+        # Allow for minor timing differences
+        assert result_none == result_now
+
+    def test_mid_week_reference_date(self):
+        """Test reference_date in the middle of a week."""
+        history = [
+            {
+                "date": "2026-01-05",  # Sunday before
+                "results": {"testuser": {"username": "testuser", "total_xp": 1000}},
+            },
+            {
+                "date": "2026-01-08",  # Wednesday
+                "results": {"testuser": {"username": "testuser", "total_xp": 1200}},
+            },
+        ]
+
+        # Reference date = Thursday Jan 9
+        # Week start = Monday Jan 6
+        # Baseline should be Jan 5 (1000)
+        thursday_jan_9 = datetime(2026, 1, 9)
+        result = calculate_weekly_xp(
+            "testuser", 1300, history, reference_date=thursday_jan_9
+        )
+
+        assert result == 300  # 1300 - 1000

@@ -6,11 +6,15 @@ Generates daily/weekly leaderboards and progress reports
 """
 
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from src.config import load_config, get_email_config, get_storage_config
-from src.duolingo_api import check_all_family
+from src.duolingo_api import (
+    check_all_family,
+    calculate_weekly_xp,
+    calculate_weekly_xp_per_language,
+)
 from src.storage_factory import StorageFactory
 from src.report_generator import generate_daily_report, generate_weekly_report
 from src.html_report_generator import (
@@ -220,6 +224,31 @@ def main():
 
     elif args.weekly:
         # Weekly mode: generate comprehensive report
+        # First save the data with current week's XP (for history tracking)
+        storage.save_daily_data(results)
+
+        # Recalculate weekly XP for the PREVIOUS week (for the report)
+        # Use yesterday as reference so week boundary is last Mon-Sun
+        # This fixes the bug where Monday morning reports show 0 XP because
+        # the calculation uses the new week starting today instead of the
+        # completed week that the report should cover.
+        reference_date = datetime.now() - timedelta(days=1)
+        for member_name, user_data in results.items():
+            if "error" not in user_data:
+                # Recalculate weekly XP using previous week reference
+                user_data["weekly_xp"] = calculate_weekly_xp(
+                    user_data["username"],
+                    user_data["total_xp"],
+                    history,
+                    reference_date=reference_date,
+                )
+                user_data["weekly_xp_per_language"] = calculate_weekly_xp_per_language(
+                    user_data["username"],
+                    user_data["language_progress"],
+                    history,
+                    reference_date=reference_date,
+                )
+
         goals = config.get("goals", {})
         report = generate_weekly_report(results, goals)
         print("\n" + report)
@@ -250,9 +279,6 @@ def main():
             html_path = save_html_report(html_report, "weekly", date_str)
             print(f"Weekly HTML report saved to {html_path}")
             print("Latest report available at reports/index.html")
-
-        # Also save the data
-        storage.save_daily_data(results)
 
     else:
         # Default: just check and display

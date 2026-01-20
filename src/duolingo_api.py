@@ -52,7 +52,10 @@ def make_api_request_with_retry(
 
 
 def calculate_weekly_xp(
-    username: str, current_total_xp: int, history: list[dict[str, Any]] | None = None
+    username: str,
+    current_total_xp: int,
+    history: list[dict[str, Any]] | None = None,
+    reference_date: datetime | None = None,
 ) -> int:
     """Calculate weekly XP from historical data (total across all languages)
 
@@ -60,6 +63,10 @@ def calculate_weekly_xp(
         username: The Duolingo username
         current_total_xp: Current total XP for the user
         history: Optional pre-loaded history data. If None, loads from default JSON storage.
+        reference_date: Optional date to use for week boundary calculations.
+                       If None, uses datetime.now(). Use yesterday's date when
+                       generating weekly reports on Monday morning to report on
+                       the previous week (Mon-Sun) instead of the new week.
     """
     try:
         if history is None:
@@ -71,8 +78,8 @@ def calculate_weekly_xp(
         if not history:
             return 0
 
-        # Get start of current week (Monday)
-        today = datetime.now()
+        # Get start of current week (Monday) relative to reference date
+        today = reference_date or datetime.now()
         days_since_monday = today.weekday()
         week_start = (today - timedelta(days=days_since_monday)).strftime("%Y-%m-%d")
 
@@ -134,6 +141,7 @@ def calculate_weekly_xp_per_language(
     username: str,
     current_language_progress: dict[str, LanguageProgress],
     history: list[dict[str, Any]] | None = None,
+    reference_date: datetime | None = None,
 ) -> dict[str, int]:
     """Calculate weekly XP per language from historical data
 
@@ -141,6 +149,10 @@ def calculate_weekly_xp_per_language(
         username: The Duolingo username
         current_language_progress: Current language progress data
         history: Optional pre-loaded history data. If None, loads from default JSON storage.
+        reference_date: Optional date to use for week boundary calculations.
+                       If None, uses datetime.now(). Use yesterday's date when
+                       generating weekly reports on Monday morning to report on
+                       the previous week (Mon-Sun) instead of the new week.
     """
     try:
         if history is None:
@@ -152,8 +164,8 @@ def calculate_weekly_xp_per_language(
         if not history:
             return {}
 
-        # Get start of current week (Monday)
-        today = datetime.now()
+        # Get start of current week (Monday) relative to reference date
+        today = reference_date or datetime.now()
         days_since_monday = today.weekday()
         week_start = (today - timedelta(days=days_since_monday)).strftime("%Y-%m-%d")
 
