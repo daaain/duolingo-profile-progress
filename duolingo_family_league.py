@@ -8,6 +8,7 @@ Generates daily/weekly leaderboards and progress reports
 import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import cast
 
 from src.config import load_config, get_email_config, get_storage_config
 from src.duolingo_api import (
@@ -23,6 +24,7 @@ from src.html_report_generator import (
 )
 from src.email_sender import send_email, should_send_daily, should_send_weekly
 from src.i18n import set_global_language, get_language_from_env, get_i18n
+from src.types import UserProgress
 
 
 def generate_index_html(reports_dir: Path) -> str:
@@ -236,15 +238,17 @@ def main():
         for member_name, user_data in results.items():
             if "error" not in user_data:
                 # Recalculate weekly XP using previous week reference
-                user_data["weekly_xp"] = calculate_weekly_xp(
-                    user_data["username"],
-                    user_data["total_xp"],
+                # Cast to UserProgress since we've checked there's no error
+                progress = cast(UserProgress, user_data)
+                progress["weekly_xp"] = calculate_weekly_xp(
+                    progress["username"],
+                    progress["total_xp"],
                     history,
                     reference_date=reference_date,
                 )
-                user_data["weekly_xp_per_language"] = calculate_weekly_xp_per_language(
-                    user_data["username"],
-                    user_data["language_progress"],
+                progress["weekly_xp_per_language"] = calculate_weekly_xp_per_language(
+                    progress["username"],
+                    progress["language_progress"],
                     history,
                     reference_date=reference_date,
                 )
