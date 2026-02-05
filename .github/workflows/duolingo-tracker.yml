@@ -2,10 +2,8 @@ name: Duolingo Family League Tracker
 
 on:
   schedule:
-    # Daily at 00:30 UTC (captures full previous day)
+    # Daily at 00:30 UTC (weekly on Mondays)
     - cron: '30 0 * * *'
-    # Weekly on Mondays at 00:30 UTC (captures full week Mon-Sun)
-    - cron: '30 0 * * 1'
   workflow_dispatch:
     inputs:
       report_type:

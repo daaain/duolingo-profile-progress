@@ -177,10 +177,7 @@ Run the tracker entirely on GitHub infrastructure with no server required:
    - Source: Deploy from a branch
    - Branch: `gh-pages` / `/ (root)`
 
-The workflow runs automatically:
-
-- **Daily** at 00:30 UTC (captures the full previous day)
-- **Weekly** on Mondays at 00:30 UTC (captures the full week)
+The workflow runs automatically at 00:30 UTC daily, switching to a weekly report on Mondays.
 
 You can also trigger it manually from Actions → Duolingo Family League Tracker → Run workflow.
 
