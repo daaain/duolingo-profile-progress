@@ -51,9 +51,22 @@ def make_api_request_with_retry(
     raise requests.RequestException("Max retries exceeded")
 
 
+def get_language_xp(user_data: dict[str, Any]) -> int:
+    """Sum of XP across language courses for a user progress entry
+
+    Duolingo's totalXp also includes non-language XP (and was recalculated in
+    October 2026), so only course XP is used for league calculations. Falls back
+    to total_xp for entries without per-language data.
+    """
+    language_progress = user_data.get("language_progress")
+    if language_progress:
+        return sum(lang.get("xp", 0) for lang in language_progress.values())
+    return user_data.get("total_xp", 0)
+
+
 def calculate_weekly_xp(
     username: str,
-    current_total_xp: int,
+    current_language_xp: int,
     history: list[dict[str, Any]] | None = None,
     reference_date: datetime | None = None,
 ) -> int:
@@ -61,7 +74,7 @@ def calculate_weekly_xp(
 
     Args:
         username: The Duolingo username
-        current_total_xp: Current total XP for the user
+        current_language_xp: Current XP summed across the user's language courses
         history: Optional pre-loaded history data. If None, loads from default JSON storage.
         reference_date: Optional date to use for week boundary calculations.
                        If None, uses datetime.now(). Use yesterday's date when
@@ -102,7 +115,7 @@ def calculate_weekly_xp(
                         ):
                             earliest_this_week_xp = (
                                 entry_date,
-                                user_data.get("total_xp", 0),
+                                get_language_xp(user_data),
                             )
                         break
             elif entry_date and entry_date < week_start:
@@ -116,19 +129,19 @@ def calculate_weekly_xp(
                         if week_start_xp is None or (
                             entry_date and entry_date > week_start_xp[0]
                         ):
-                            week_start_xp = (entry_date, user_data.get("total_xp", 0))
+                            week_start_xp = (entry_date, get_language_xp(user_data))
                         break
 
         # Calculate weekly XP
         if week_start_xp is not None:
             # We have data from before this week - use it as baseline
-            return max(0, current_total_xp - week_start_xp[1])
+            return max(0, current_language_xp - week_start_xp[1])
         elif earliest_this_week_xp is not None:
             # No data from before this week, use earliest data from this week
             # If it's the first day, return 0 (no progress yet)
-            if earliest_this_week_xp[1] == current_total_xp:
+            if earliest_this_week_xp[1] == current_language_xp:
                 return 0
-            return max(0, current_total_xp - earliest_this_week_xp[1])
+            return max(0, current_language_xp - earliest_this_week_xp[1])
 
         return 0
 
@@ -240,13 +253,15 @@ def calculate_weekly_xp_per_language(
 
 
 def calculate_daily_xp(
-    username: str, current_total_xp: int, history: list[dict[str, Any]] | None = None
+    username: str,
+    current_language_xp: int,
+    history: list[dict[str, Any]] | None = None,
 ) -> int:
     """Calculate daily XP from historical data (XP earned since yesterday)
 
     Args:
         username: The Duolingo username
-        current_total_xp: Current total XP for the user
+        current_language_xp: Current XP summed across the user's language courses
         history: Optional pre-loaded history data. If None, loads from default JSON storage.
     """
     try:
@@ -274,13 +289,13 @@ def calculate_daily_xp(
                         user_data.get("username", "").lower() == username.lower()
                         or user_key.lower().replace(" ", "_") == username.lower()
                     ):
-                        yesterday_xp = user_data.get("total_xp", 0)
+                        yesterday_xp = get_language_xp(user_data)
                         break
                 if yesterday_xp is not None:
                     break
 
         if yesterday_xp is not None:
-            return max(0, current_total_xp - yesterday_xp)
+            return max(0, current_language_xp - yesterday_xp)
 
         return 0
 
@@ -428,15 +443,18 @@ def get_user_progress(
         )
 
         total_xp = user.get("totalXp", 0)
+        language_xp = sum(lang["xp"] for lang in language_progress.values())
 
         return UserProgress(
             username=username,
             name=user.get("name", username),
             streak=streak,
             total_xp=total_xp,
-            weekly_xp=calculate_weekly_xp(username, total_xp, history),
+            language_xp=language_xp,
+            other_xp=max(0, total_xp - language_xp),
+            weekly_xp=calculate_weekly_xp(username, language_xp, history),
             weekly_xp_per_language=weekly_xp_per_language,
-            daily_xp=calculate_daily_xp(username, total_xp, history),
+            daily_xp=calculate_daily_xp(username, language_xp, history),
             daily_xp_per_language=daily_xp_per_language,
             active_languages=active_languages,
             language_progress=language_progress,
@@ -523,7 +541,7 @@ def check_all_family(
                     print(
                         f"   Active languages: {', '.join(active_langs) if active_langs else 'None'}"
                     )
-                    print(f"   Total XP: {progress['total_xp']}")
+                    print(f"   Language XP: {progress['language_xp']}")
             except Exception as e:
                 print(f"❌ Error processing {member_name}: {str(e)}")
                 results[member_name] = UserProgressError(

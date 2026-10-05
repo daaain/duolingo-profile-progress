@@ -36,6 +36,7 @@
 	"unable_to_check": "Unable to check progress: {error}",
 	"xp": "{xp:,} XP",
 	"weekly_gain": "+{xp} this week",
+	"other_xp": "Non-language XP: {xp:,} XP (not counted in the league)",
 	"week_so_far": "{xp} this week",
 	"daily_gain": "+{xp} today",
 	"date_format": "%Y-%m-%d",

@@ -5,7 +5,12 @@ from unittest.mock import patch
 
 import pytest
 
-from src.duolingo_api import calculate_weekly_xp, calculate_weekly_xp_per_language
+from src.duolingo_api import (
+    calculate_daily_xp,
+    calculate_weekly_xp,
+    calculate_weekly_xp_per_language,
+    get_language_xp,
+)
 
 
 class TestWeeklyXPCalculation:
@@ -112,7 +117,8 @@ class TestWeeklyXPCalculation:
 
     def test_weekly_xp_mixed_week_data(self, mock_storage):
         """Test with data from both current and previous weeks"""
-        today = datetime.now()
+        # Pinned to a Wednesday: on a Monday "yesterday" falls in the previous week
+        today = datetime(2026, 1, 14)
         monday = today - timedelta(days=today.weekday())
         last_week = monday - timedelta(days=3)
         yesterday = today - timedelta(days=1)
@@ -133,7 +139,7 @@ class TestWeeklyXPCalculation:
         ]
 
         # Should use last week's Sunday data as baseline
-        result = calculate_weekly_xp("testuser", 4500)
+        result = calculate_weekly_xp("testuser", 4500, reference_date=today)
 
         assert result == 500  # 4500 - 4000
 
@@ -179,7 +185,7 @@ class TestWeeklyXPCalculation:
 
     def test_weekly_xp_with_actual_data_structure(self, mock_storage):
         """Test with actual data structure from the application"""
-        today = datetime.now()
+        today = datetime(2026, 1, 14)
         yesterday = today - timedelta(days=1)
 
         mock_storage.load_history.return_value = [
@@ -227,9 +233,10 @@ class TestWeeklyXPCalculation:
             },
         ]
 
-        result = calculate_weekly_xp("daaain", 181946)
+        # Language XP is compared, not Duolingo's totalXp
+        result = calculate_weekly_xp("daaain", 181589, reference_date=today)
 
-        assert result == 657  # 181946 - 181289
+        assert result == 657  # 181589 - 180932
 
 
 class TestWeeklyXPPerLanguage:
@@ -573,3 +580,67 @@ class TestReferenceDateParameter:
         )
 
         assert result == 300  # 1300 - 1000
+
+
+class TestLanguageXP:
+    """League XP is based on language courses only, not Duolingo's totalXp"""
+
+    def test_get_language_xp_sums_courses(self):
+        user_data = {
+            "total_xp": 428273,
+            "language_progress": {"Spanish": {"xp": 355317}, "French": {"xp": 357}},
+        }
+        assert get_language_xp(user_data) == 355674
+
+    def test_get_language_xp_falls_back_to_total_xp(self):
+        assert get_language_xp({"total_xp": 1000}) == 1000
+        assert get_language_xp({"total_xp": 1000, "language_progress": {}}) == 1000
+
+    def test_weekly_xp_ignores_non_language_total_xp_jump(self):
+        """Duolingo's totalXp jumped by ~90k in October 2026 without course XP
+        changing accordingly; that must not count as weekly XP."""
+        history = [
+            {
+                "date": "2026-09-27",
+                "results": {
+                    "daniel": {
+                        "username": "daaain",
+                        "total_xp": 334786,
+                        "language_progress": {"Spanish": {"xp": 334786}},
+                    }
+                },
+            },
+            {
+                "date": "2026-10-02",
+                "results": {
+                    "daniel": {
+                        "username": "daaain",
+                        "total_xp": 425000,
+                        "language_progress": {"Spanish": {"xp": 335500}},
+                    }
+                },
+            },
+        ]
+
+        result = calculate_weekly_xp(
+            "daaain", 336000, history, reference_date=datetime(2026, 10, 4)
+        )
+
+        assert result == 1214  # 336000 - 334786, total_xp ignored
+
+    def test_daily_xp_uses_language_xp(self):
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        history = [
+            {
+                "date": yesterday,
+                "results": {
+                    "daniel": {
+                        "username": "daaain",
+                        "total_xp": 425000,
+                        "language_progress": {"Spanish": {"xp": 335500}},
+                    }
+                },
+            }
+        ]
+
+        assert calculate_daily_xp("daaain", 336000, history) == 500

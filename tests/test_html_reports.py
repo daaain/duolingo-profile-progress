@@ -367,6 +367,69 @@ class TestDateFormatting:
             assert "2025. 08. 08." in html_report
 
 
+class TestWeeklyReportContent:
+    """Test week ending date and non-language XP in weekly reports"""
+
+    @pytest.fixture
+    def results(self):
+        return {
+            "Daniel": {
+                "username": "daaain",
+                "name": "Daniel",
+                "streak": 692,
+                "total_xp": 428273,
+                "language_xp": 356910,
+                "other_xp": 71363,
+                "weekly_xp": 2500,
+                "language_progress": {
+                    "Spanish": {
+                        "xp": 355317,
+                        "from_language": "en",
+                        "learning_language": "es",
+                    }
+                },
+                "weekly_xp_per_language": {"Spanish": 2500},
+            }
+        }
+
+    def test_week_ending_uses_given_date(self, results):
+        with patch("src.html_report_generator.get_i18n") as mock_i18n:
+            mock_i18n.return_value = I18n("en")
+            html_report = generate_weekly_html_report(
+                results, {}, week_ending=datetime(2026, 10, 4)
+            )
+
+        assert "Week ending: 2026-10-04" in html_report
+
+    @patch("src.html_report_generator.datetime")
+    def test_week_ending_defaults_to_yesterday(self, mock_datetime, results):
+        mock_datetime.now.return_value = datetime(2026, 10, 5, 6, 0, 0)
+
+        with patch("src.html_report_generator.get_i18n") as mock_i18n:
+            mock_i18n.return_value = I18n("hu")
+            html_report = generate_weekly_html_report(results, {})
+
+        assert "Hét vége: 2026. 10. 04." in html_report
+
+    def test_leaderboard_shows_language_xp_and_other_xp_separately(self, results):
+        with patch("src.html_report_generator.get_i18n") as mock_i18n:
+            mock_i18n.return_value = I18n("en")
+            html_report = generate_weekly_html_report(results, {})
+
+        assert "356,910 total XP" in html_report
+        assert "428,273" not in html_report
+        assert "Non-language XP: 71,363 XP (not counted in the league)" in html_report
+
+    def test_text_report_week_ending_and_other_xp(self, results):
+        from src.report_generator import generate_weekly_report
+
+        report = generate_weekly_report(results, {}, week_ending=datetime(2026, 10, 4))
+
+        assert "Week ending: 2026-10-04" in report
+        assert "Total XP: 356,910" in report
+        assert "Non-language XP: 71,363 XP" in report
+
+
 class TestEdgeCases:
     """Test edge cases and error conditions"""
 
