@@ -12,7 +12,7 @@ Track your family's Duolingo language learning progress with automated daily and
 - **Goal setting**: Set weekly XP and streak goals for motivation
 - **Data persistence**: Automatically saves daily progress data for historical tracking with choice of JSON, SQLite, or Gist storage
 - **High-performance storage**: SQLite backend for better scalability and query performance
-- **Serverless deployment**: GitHub Actions with Gist storage and GitHub Pages for zero-infrastructure hosting
+- **Serverless deployment**: GitHub Actions with Gist storage, no server needed
 - **Secure configuration**: Use environment variables for sensitive credentials
 - **Modular architecture**: Clean separation of concerns for easy maintenance
 
@@ -77,9 +77,6 @@ python duolingo_family_league.py --daily
 
 # Save data and send email
 python duolingo_family_league.py --daily --send-email
-
-# Generate HTML report in addition to text
-python duolingo_family_league.py --daily --html
 ```
 
 ### Weekly Report
@@ -92,27 +89,7 @@ python duolingo_family_league.py --weekly
 
 # Also send via email
 python duolingo_family_league.py --weekly --send-email
-
-# Generate HTML report in addition to text
-python duolingo_family_league.py --weekly --html
 ```
-
-### HTML Reports
-
-Generate beautiful HTML reports with responsive design:
-
-```bash
-# Generate HTML for current status
-python duolingo_family_league.py --html
-
-# Generate HTML daily report
-python duolingo_family_league.py --daily --html
-
-# Generate HTML weekly report
-python duolingo_family_league.py --weekly --html
-```
-
-HTML reports include professional styling, responsive design, and rich formatting with progress badges and visual indicators.
 
 ### Automation with Cron
 
@@ -125,23 +102,6 @@ Run once a night, after everyone's day has ended, so each snapshot holds the ful
 # Weekly report at 05:00 UTC on Mondays
 0 5 * * 1 cd /path/to/duolingo-family-league && python duolingo_family_league.py --weekly --send-email
 ```
-
-### macOS LaunchAgent (Recommended for Mac users)
-
-The project includes a LaunchAgent configuration for reliable scheduling:
-
-1. Update the username in the plist file:
-
-   ```bash
-   sed -i '' 's/YOUR_USERNAME/'"$USER"'/g' com.duolingo.familyleague.plist
-   ```
-
-2. Install the LaunchAgent:
-
-   ```bash
-   cp com.duolingo.familyleague.plist ~/Library/LaunchAgents/
-   launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
-   ```
 
 ### GitHub Actions (Recommended for serverless deployment)
 
@@ -169,13 +129,7 @@ Run the tracker entirely on GitHub infrastructure with no server required:
    - `FAMILY_EMAIL_LIST` - Comma-separated recipient emails
 
 4. **Configure repository variables** (Settings → Secrets and variables → Actions → Variables):
-   - `TIMEZONE` - (Optional) Your timezone, e.g., `Europe/London` (defaults to `UTC`)
    - `DUOLINGO_REPORT_LANGUAGE` - (Optional) Report language, e.g., `en` or `hu`
-
-5. **Enable GitHub Pages:**
-   - Go to Settings → Pages
-   - Source: Deploy from a branch
-   - Branch: `gh-pages` / `/ (root)`
 
 The workflow runs automatically at 00:30 UTC daily, switching to a weekly report on Mondays.
 
@@ -283,7 +237,6 @@ The application supports three storage backends:
 - 50-100x faster queries for historical data analysis
 - Atomic transactions prevent data corruption
 - Advanced querying capabilities (user/language-specific histories)
-- Automatic data cleanup and maintenance features
 - Much smaller storage footprint for large datasets
 
 ### Data Migration
@@ -415,7 +368,6 @@ uv sync --all-extras
 │   ├── ci.yml                  # CI pipeline (tests, linting)
 │   └── duolingo-tracker.yml    # Scheduled tracker workflow
 ├── league_data/                # Historical data (created automatically)
-├── reports/                    # HTML reports for GitHub Pages
 └── pyproject.toml              # Project dependencies
 ```
 

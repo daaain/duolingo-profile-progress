@@ -127,15 +127,11 @@ def load_config() -> dict[str, Any] | None:
             print("❌ GITHUB_TOKEN environment variable required for gist backend")
             return None
 
-    # Timezone setting (for report timestamps)
-    timezone = os.getenv("TIMEZONE", "UTC")
-
     return {
         "family_members": family_members,
         "email_settings": email_settings,
         "goals": goals,
         "storage_settings": storage_settings,
-        "timezone": timezone,
     }
 
 
@@ -157,14 +153,6 @@ def get_storage_config(config: dict[str, Any] | None) -> dict[str, Any]:
     if not config:
         return default
     return config.get("storage_settings", default)
-
-
-def get_email_list() -> list[str]:
-    """Get email list from environment variable"""
-    email_list_env = os.getenv("FAMILY_EMAIL_LIST", "")
-    if email_list_env:
-        return [email.strip() for email in email_list_env.split(",")]
-    return []
 
 
 def get_validated_email_list(env_var: str = "FAMILY_EMAIL_LIST") -> list[str]:

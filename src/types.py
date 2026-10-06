@@ -1,6 +1,6 @@
 """Type definitions for Duolingo API responses"""
 
-from typing import TypedDict, Any, Union
+from typing import TypedDict, Any
 
 
 class DuolingoCourse(TypedDict):
@@ -121,10 +121,3 @@ class UserProgressError(TypedDict):
     weekly_xp_per_language: dict[str, int]
     daily_xp_per_language: dict[str, int]
     active_languages: list[str]
-
-
-class HistoryEntry(TypedDict):
-    """Historical data entry"""
-
-    date: str
-    results: dict[str, Union[UserProgress, UserProgressError]]
