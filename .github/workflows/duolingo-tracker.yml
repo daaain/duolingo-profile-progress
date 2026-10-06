@@ -16,7 +16,7 @@ on:
           - weekly
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   track:
@@ -68,17 +68,8 @@ jobs:
           DAILY_EMAIL_LIST: ${{ secrets.DAILY_EMAIL_LIST }}
         run: |
           if [ "${{ steps.report-type.outputs.type }}" = "weekly" ]; then
-            uv run python duolingo_family_league.py --weekly --html --send-email
+            uv run python duolingo_family_league.py --weekly --send-email
           else
-            uv run python duolingo_family_league.py --daily --html --send-email
+            uv run python duolingo_family_league.py --daily --send-email
           fi
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./reports
-          keep_files: true
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Update Duolingo report - ${{ steps.report-type.outputs.type }}'

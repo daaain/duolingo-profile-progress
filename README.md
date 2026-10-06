@@ -12,7 +12,7 @@ Track your family's Duolingo language learning progress with automated daily and
 - **Goal setting**: Set weekly XP and streak goals for motivation
 - **Data persistence**: Automatically saves daily progress data for historical tracking with choice of JSON, SQLite, or Gist storage
 - **High-performance storage**: SQLite backend for better scalability and query performance
-- **Serverless deployment**: GitHub Actions with Gist storage and GitHub Pages for zero-infrastructure hosting
+- **Serverless deployment**: GitHub Actions with Gist storage, no server needed
 - **Secure configuration**: Use environment variables for sensitive credentials
 - **Modular architecture**: Clean separation of concerns for easy maintenance
 
@@ -77,9 +77,6 @@ python duolingo_family_league.py --daily
 
 # Save data and send email
 python duolingo_family_league.py --daily --send-email
-
-# Generate HTML report in addition to text
-python duolingo_family_league.py --daily --html
 ```
 
 ### Weekly Report
@@ -92,27 +89,7 @@ python duolingo_family_league.py --weekly
 
 # Also send via email
 python duolingo_family_league.py --weekly --send-email
-
-# Generate HTML report in addition to text
-python duolingo_family_league.py --weekly --html
 ```
-
-### HTML Reports
-
-Generate beautiful HTML reports with responsive design:
-
-```bash
-# Generate HTML for current status
-python duolingo_family_league.py --html
-
-# Generate HTML daily report
-python duolingo_family_league.py --daily --html
-
-# Generate HTML weekly report
-python duolingo_family_league.py --weekly --html
-```
-
-HTML reports include professional styling, responsive design, and rich formatting with progress badges and visual indicators.
 
 ### Automation with Cron
 
@@ -153,11 +130,6 @@ Run the tracker entirely on GitHub infrastructure with no server required:
 
 4. **Configure repository variables** (Settings → Secrets and variables → Actions → Variables):
    - `DUOLINGO_REPORT_LANGUAGE` - (Optional) Report language, e.g., `en` or `hu`
-
-5. **Enable GitHub Pages:**
-   - Go to Settings → Pages
-   - Source: Deploy from a branch
-   - Branch: `gh-pages` / `/ (root)`
 
 The workflow runs automatically at 00:30 UTC daily, switching to a weekly report on Mondays.
 
@@ -396,7 +368,6 @@ uv sync --all-extras
 │   ├── ci.yml                  # CI pipeline (tests, linting)
 │   └── duolingo-tracker.yml    # Scheduled tracker workflow
 ├── league_data/                # Historical data (created automatically)
-├── reports/                    # HTML reports for GitHub Pages
 └── pyproject.toml              # Project dependencies
 ```
 
