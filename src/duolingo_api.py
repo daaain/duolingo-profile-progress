@@ -3,7 +3,7 @@
 import requests
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Union
 
 try:
@@ -59,9 +59,57 @@ def get_language_xp(user_data: dict[str, Any]) -> int:
     to total_xp for entries without per-language data.
     """
     language_progress = user_data.get("language_progress")
-    if language_progress:
+    if language_progress is not None:
         return sum(lang.get("xp", 0) for lang in language_progress.values())
     return user_data.get("total_xp", 0)
+
+
+def find_user_data(entry: dict[str, Any], username: str) -> dict[str, Any] | None:
+    """User's progress in a history entry, or None if missing or failed to fetch"""
+    for user_key, user_data in entry.get("results", {}).items():
+        if (
+            user_data.get("username", "").lower() == username.lower()
+            or user_key.lower().replace(" ", "_") == username.lower()
+        ):
+            return None if "error" in user_data else user_data
+    return None
+
+
+def find_week_baseline(
+    username: str,
+    history: list[dict[str, Any]],
+    reference_date: datetime | None = None,
+) -> dict[str, Any] | None:
+    """User's progress at the start of the week (Monday) containing reference_date
+
+    Snapshots are taken in the early morning, so the one dated Monday holds the
+    XP at the end of Sunday. If Monday's is missing, the snapshot dated nearest
+    to Monday is used, preferring the later one when equally near so that no
+    day is counted in two weekly reports.
+    """
+    today = reference_date or datetime.now()
+    week_start = (today - timedelta(days=today.weekday())).date()
+
+    before: tuple[date, dict[str, Any]] | None = None
+    on_or_after: tuple[date, dict[str, Any]] | None = None
+
+    for entry in history:
+        user_data = find_user_data(entry, username)
+        if user_data is None or not entry.get("date"):
+            continue
+        entry_date = date.fromisoformat(entry["date"])
+        if entry_date < week_start:
+            if before is None or entry_date > before[0]:
+                before = (entry_date, user_data)
+        elif on_or_after is None or entry_date < on_or_after[0]:
+            on_or_after = (entry_date, user_data)
+
+    if before is None or on_or_after is None:
+        nearest = on_or_after or before
+        return nearest[1] if nearest else None
+    if on_or_after[0] - week_start <= week_start - before[0]:
+        return on_or_after[1]
+    return before[1]
 
 
 def calculate_weekly_xp(
@@ -88,62 +136,11 @@ def calculate_weekly_xp(
             storage = DataStorage()
             history = storage.load_history()
 
-        if not history:
+        baseline = find_week_baseline(username, history or [], reference_date)
+        if baseline is None:
             return 0
 
-        # Get start of current week (Monday) relative to reference date
-        today = reference_date or datetime.now()
-        days_since_monday = today.weekday()
-        week_start = (today - timedelta(days=days_since_monday)).strftime("%Y-%m-%d")
-
-        # Find XP at start of week or earliest available data this week
-        week_start_xp = None
-        earliest_this_week_xp = None
-
-        for entry in history:
-            entry_date = entry.get("date")
-            if entry_date and entry_date >= week_start:
-                # This entry is from current week
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        if earliest_this_week_xp is None or (
-                            entry_date and entry_date < earliest_this_week_xp[0]
-                        ):
-                            earliest_this_week_xp = (
-                                entry_date,
-                                get_language_xp(user_data),
-                            )
-                        break
-            elif entry_date and entry_date < week_start:
-                # This is from before the week - use as baseline if it's the most recent
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        if week_start_xp is None or (
-                            entry_date and entry_date > week_start_xp[0]
-                        ):
-                            week_start_xp = (entry_date, get_language_xp(user_data))
-                        break
-
-        # Calculate weekly XP
-        if week_start_xp is not None:
-            # We have data from before this week - use it as baseline
-            return max(0, current_language_xp - week_start_xp[1])
-        elif earliest_this_week_xp is not None:
-            # No data from before this week, use earliest data from this week
-            # If it's the first day, return 0 (no progress yet)
-            if earliest_this_week_xp[1] == current_language_xp:
-                return 0
-            return max(0, current_language_xp - earliest_this_week_xp[1])
-
-        return 0
+        return max(0, current_language_xp - get_language_xp(baseline))
 
     except Exception:
         # If we can't calculate weekly XP (e.g., no history), return 0
@@ -177,75 +174,17 @@ def calculate_weekly_xp_per_language(
         if not history:
             return {}
 
-        # Get start of current week (Monday) relative to reference date
-        today = reference_date or datetime.now()
-        days_since_monday = today.weekday()
-        week_start = (today - timedelta(days=days_since_monday)).strftime("%Y-%m-%d")
+        baseline = find_week_baseline(username, history, reference_date) or {}
+        baseline_languages = baseline.get("language_progress", {})
 
-        # Find language XP at start of week or earliest available data this week
-        week_start_languages = None
-        earliest_this_week_languages = None
-
-        for entry in history:
-            entry_date = entry.get("date")
-            if entry_date and entry_date >= week_start:
-                # This entry is from current week
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        if earliest_this_week_languages is None or (
-                            entry_date and entry_date < earliest_this_week_languages[0]
-                        ):
-                            earliest_this_week_languages = (
-                                entry_date,
-                                user_data.get("language_progress", {}),
-                            )
-                        break
-            elif entry_date and entry_date < week_start:
-                # This is from before the week - use as baseline if it's the most recent
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        if week_start_languages is None or (
-                            entry_date and entry_date > week_start_languages[0]
-                        ):
-                            week_start_languages = (
-                                entry_date,
-                                user_data.get("language_progress", {}),
-                            )
-                        break
-
-        # Calculate weekly XP per language
-        weekly_xp_per_language: dict[str, int] = {}
-        baseline_languages = None
-
-        if week_start_languages is not None:
-            # We have data from before this week - use it as baseline
-            baseline_languages = week_start_languages[1]
-        elif earliest_this_week_languages is not None:
-            # No data from before this week, use earliest data from this week
-            baseline_languages = earliest_this_week_languages[1]
-
-        if baseline_languages:
-            for lang, lang_data in current_language_progress.items():
-                current_xp = lang_data.get("xp", 0)
-                baseline_xp = baseline_languages.get(lang, {}).get("xp", 0)
-                weekly_xp = max(0, current_xp - baseline_xp)
-                weekly_xp_per_language[lang] = weekly_xp
-
-        # Add any new languages that weren't in the baseline
-        for lang, lang_data in current_language_progress.items():
-            if lang not in weekly_xp_per_language:
-                # This is a new language started this week
-                weekly_xp_per_language[lang] = lang_data.get("xp", 0)
-
-        return weekly_xp_per_language
+        # Languages missing from the baseline were started this week
+        return {
+            lang: max(
+                0,
+                lang_data.get("xp", 0) - baseline_languages.get(lang, {}).get("xp", 0),
+            )
+            for lang, lang_data in current_language_progress.items()
+        }
 
     except Exception:
         # If we can't calculate weekly XP, return empty dict
@@ -283,15 +222,9 @@ def calculate_daily_xp(
         for entry in reversed(history):  # Start from most recent
             entry_date = entry.get("date")
             if entry_date and entry_date <= yesterday:
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        yesterday_xp = get_language_xp(user_data)
-                        break
-                if yesterday_xp is not None:
+                user_data = find_user_data(entry, username)
+                if user_data is not None:
+                    yesterday_xp = get_language_xp(user_data)
                     break
 
         if yesterday_xp is not None:
@@ -334,15 +267,9 @@ def calculate_daily_xp_per_language(
         for entry in reversed(history):  # Start from most recent
             entry_date = entry.get("date")
             if entry_date and entry_date <= yesterday:
-                user_results = entry.get("results", {})
-                for user_key, user_data in user_results.items():
-                    if (
-                        user_data.get("username", "").lower() == username.lower()
-                        or user_key.lower().replace(" ", "_") == username.lower()
-                    ):
-                        yesterday_languages = user_data.get("language_progress", {})
-                        break
-                if yesterday_languages is not None:
+                user_data = find_user_data(entry, username)
+                if user_data is not None:
+                    yesterday_languages = user_data.get("language_progress", {})
                     break
 
         # Calculate daily XP per language

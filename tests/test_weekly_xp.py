@@ -138,10 +138,11 @@ class TestWeeklyXPCalculation:
             },
         ]
 
-        # Should use last week's Sunday data as baseline
+        # Monday's snapshot (taken early morning) holds the XP at the end of
+        # Sunday, so it's the baseline rather than last week's data
         result = calculate_weekly_xp("testuser", 4500, reference_date=today)
 
-        assert result == 500  # 4500 - 4000
+        assert result == 400  # 4500 - 4100
 
     def test_weekly_xp_user_not_found(self, mock_storage):
         """Test when user is not in history"""
@@ -438,13 +439,13 @@ class TestReferenceDateParameter:
         # Simulate data collected during the previous week
         history = [
             {
-                "date": "2026-01-11",  # Saturday before the week
+                "date": "2026-01-11",  # Sunday before the week
                 "results": {
                     "cheezegamer": {"username": "cheezegamer", "total_xp": 28272}
                 },
             },
             {
-                "date": "2026-01-13",  # Monday of the week
+                "date": "2026-01-12",  # Monday of the week
                 "results": {
                     "cheezegamer": {"username": "cheezegamer", "total_xp": 28295}
                 },
@@ -477,7 +478,7 @@ class TestReferenceDateParameter:
         assert result_without_ref == 0  # BUG: Reports 0 because baseline is same day
 
         # With reference_date = Sunday Jan 18: week_start = Jan 12
-        # Baseline should be Jan 11 (28272), result = 28570 - 28272 = 298
+        # Baseline should be Jan 12 (28295), result = 28570 - 28295 = 275
         sunday_jan_18 = datetime(2026, 1, 18)
         result_with_ref = calculate_weekly_xp(
             "cheezegamer",
@@ -485,13 +486,13 @@ class TestReferenceDateParameter:
             history,
             reference_date=sunday_jan_18,
         )
-        assert result_with_ref == 298  # CORRECT: Uses previous week's baseline
+        assert result_with_ref == 275  # CORRECT: Uses previous week's baseline
 
     def test_calculate_weekly_xp_per_language_with_reference_date(self):
         """Test that reference_date works correctly for per-language XP."""
         history = [
             {
-                "date": "2026-01-11",  # Saturday before the week
+                "date": "2026-01-11",  # Sunday before the week
                 "results": {
                     "testuser": {
                         "username": "testuser",
@@ -522,7 +523,7 @@ class TestReferenceDateParameter:
         }
 
         # With reference_date = Sunday Jan 18: week_start = Jan 12
-        # Baseline should be Jan 11
+        # No Monday snapshot, so the nearest one is used: Jan 11 rather than Jan 15
         sunday_jan_18 = datetime(2026, 1, 18)
         result = calculate_weekly_xp_per_language(
             "testuser",
@@ -562,7 +563,7 @@ class TestReferenceDateParameter:
         """Test reference_date in the middle of a week."""
         history = [
             {
-                "date": "2026-01-05",  # Sunday before
+                "date": "2026-01-04",  # Sunday before
                 "results": {"testuser": {"username": "testuser", "total_xp": 1000}},
             },
             {
@@ -572,14 +573,110 @@ class TestReferenceDateParameter:
         ]
 
         # Reference date = Thursday Jan 9
-        # Week start = Monday Jan 6
-        # Baseline should be Jan 5 (1000)
+        # Week start = Monday Jan 5
+        # Baseline should be Jan 4 (1000), the only snapshot near the week start
         thursday_jan_9 = datetime(2026, 1, 9)
         result = calculate_weekly_xp(
             "testuser", 1300, history, reference_date=thursday_jan_9
         )
 
         assert result == 300  # 1300 - 1000
+
+
+class TestWeekBaseline:
+    """Snapshots are taken in the early morning (the GitHub Action runs around
+    00:30-07:00 UTC), so the one dated Monday holds the XP at the end of Sunday
+    and is the start of the week. Values below are from the family gist."""
+
+    @staticmethod
+    def snapshot(date, spanish_xp):
+        return {
+            "date": date,
+            "results": {
+                "dius": {
+                    "username": "dius",
+                    "total_xp": spanish_xp,
+                    "language_progress": {"Spanish": {"xp": spanish_xp}},
+                }
+            },
+        }
+
+    def test_monday_snapshot_is_baseline_not_sunday(self):
+        """Using Sunday morning's snapshot made each week cover 8 days and
+        counted every Sunday in two weekly reports."""
+        history = [
+            self.snapshot("2026-09-20", 67594),  # Sunday morning
+            self.snapshot("2026-09-21", 67640),  # Monday morning
+            self.snapshot("2026-09-24", 67875),
+        ]
+
+        result = calculate_weekly_xp(
+            "dius", 68073, history, reference_date=datetime(2026, 9, 27)
+        )
+
+        assert result == 433  # 68073 - 67640
+
+    def test_per_language_monday_snapshot_is_baseline(self):
+        history = [
+            self.snapshot("2026-09-20", 67594),
+            self.snapshot("2026-09-21", 67640),
+        ]
+
+        result = calculate_weekly_xp_per_language(
+            "dius",
+            {"Spanish": {"xp": 68073}},
+            history,
+            reference_date=datetime(2026, 9, 27),
+        )
+
+        assert result == {"Spanish": 433}
+
+    def test_missing_monday_uses_nearest_snapshot_before(self):
+        history = [
+            self.snapshot("2026-09-20", 67594),  # Sunday: 1 day off
+            self.snapshot("2026-09-24", 67875),  # Thursday: 3 days off
+        ]
+
+        result = calculate_weekly_xp(
+            "dius", 68073, history, reference_date=datetime(2026, 9, 27)
+        )
+
+        assert result == 479  # 68073 - 67594
+
+    def test_missing_monday_prefers_later_snapshot_when_equally_near(self):
+        """Prefer under-counting a day over counting it in two weekly reports"""
+        history = [
+            self.snapshot("2026-09-20", 67594),  # Sunday: 1 day off
+            self.snapshot("2026-09-22", 67689),  # Tuesday: 1 day off
+        ]
+
+        result = calculate_weekly_xp(
+            "dius", 68073, history, reference_date=datetime(2026, 9, 27)
+        )
+
+        assert result == 384  # 68073 - 67689
+
+    def test_error_snapshot_is_not_a_baseline(self):
+        """A failed fetch has no XP data and must not count as zero XP"""
+        history = [
+            self.snapshot("2026-09-20", 67594),
+            {
+                "date": "2026-09-21",
+                "results": {
+                    "dius": {
+                        "username": "dius",
+                        "error": "API request failed",
+                        "language_progress": {},
+                    }
+                },
+            },
+        ]
+
+        result = calculate_weekly_xp(
+            "dius", 68073, history, reference_date=datetime(2026, 9, 27)
+        )
+
+        assert result == 479  # 68073 - 67594
 
 
 class TestLanguageXP:
@@ -594,7 +691,31 @@ class TestLanguageXP:
 
     def test_get_language_xp_falls_back_to_total_xp(self):
         assert get_language_xp({"total_xp": 1000}) == 1000
-        assert get_language_xp({"total_xp": 1000, "language_progress": {}}) == 1000
+
+    def test_get_language_xp_is_zero_without_courses(self):
+        assert get_language_xp({"total_xp": 1000, "language_progress": {}}) == 0
+
+    def test_weekly_xp_counts_first_course_started_this_week(self):
+        """A member with no course XP at the week start has a language XP
+        baseline of 0, not their total_xp."""
+        history = [
+            {
+                "date": "2026-09-28",
+                "results": {
+                    "kid": {
+                        "username": "kid",
+                        "total_xp": 1000,
+                        "language_progress": {},
+                    }
+                },
+            }
+        ]
+
+        result = calculate_weekly_xp(
+            "kid", 150, history, reference_date=datetime(2026, 10, 4)
+        )
+
+        assert result == 150
 
     def test_weekly_xp_ignores_non_language_total_xp_jump(self):
         """Duolingo's totalXp jumped by ~90k in October 2026 without course XP
