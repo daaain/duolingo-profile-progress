@@ -242,7 +242,7 @@ def main():
                 progress = cast(UserProgress, user_data)
                 progress["weekly_xp"] = calculate_weekly_xp(
                     progress["username"],
-                    progress["total_xp"],
+                    progress["language_xp"],
                     history,
                     reference_date=reference_date,
                 )
@@ -254,11 +254,13 @@ def main():
                 )
 
         goals = config.get("goals", {})
-        report = generate_weekly_report(results, goals)
+        report = generate_weekly_report(results, goals, week_ending=reference_date)
         print("\n" + report)
 
         # Generate HTML report (always needed for emails with i18n support)
-        html_report = generate_weekly_html_report(results, goals)
+        html_report = generate_weekly_html_report(
+            results, goals, week_ending=reference_date
+        )
 
         if args.send_email or should_send_weekly(email_config):
             i18n = get_i18n()

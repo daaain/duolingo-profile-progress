@@ -1,7 +1,7 @@
 """HTML report generation for Duolingo Family League"""
 
 import html
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from .html_templates import DAILY_REPORT_TEMPLATE, WEEKLY_REPORT_TEMPLATE
 from .i18n import get_i18n, translate_language_name
@@ -99,8 +99,19 @@ def generate_daily_html_report(results: dict[str, Any]) -> str:
     )
 
 
-def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) -> str:
-    """Generate comprehensive weekly family report in HTML format"""
+def generate_weekly_html_report(
+    results: dict[str, Any],
+    goals: dict[str, Any],
+    week_ending: datetime | None = None,
+) -> str:
+    """Generate comprehensive weekly family report in HTML format
+
+    Args:
+        results: User progress data
+        goals: League goals
+        week_ending: Last day covered by the report (defaults to yesterday, as
+                     weekly reports run on Monday for the previous Mon-Sun week)
+    """
 
     i18n = get_i18n()
     leaderboard = generate_leaderboard(results)
@@ -231,6 +242,14 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                 </div>
             """
 
+        other_xp_html = ""
+        if data.get("other_xp", 0) > 0:
+            other_xp_html = f"""
+                <div class="progress-item">
+                    🧩 {i18n.get("other_xp", xp=data["other_xp"])}
+                </div>
+            """
+
         member_details.append(
             f"""
             <div class="member-detail">
@@ -244,6 +263,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
                 <div class="progress-item">{streak_status}</div>
                 <div class="progress-item">{xp_status}</div>
                 {language_progress_html}
+                {other_xp_html}
             </div>
         """.strip()
         )
@@ -259,7 +279,7 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
 
     # Format dates
     current_date = datetime.now()
-    week_ending = current_date.strftime(i18n.get("date_format"))
+    week_ending = week_ending or current_date - timedelta(days=1)
     generated_date = current_date.strftime(i18n.get("datetime_format"))
 
     return WEEKLY_REPORT_TEMPLATE.format(
@@ -267,7 +287,9 @@ def generate_weekly_html_report(results: dict[str, Any], goals: dict[str, Any]) 
         title=i18n.get("weekly_report_title"),
         header=i18n.get("weekly_report_header"),
         subtitle=i18n.get("weekly_report_subtitle"),
-        week_ending=i18n.get("week_ending", date=week_ending),
+        week_ending=i18n.get(
+            "week_ending", date=week_ending.strftime(i18n.get("date_format"))
+        ),
         generated_date=i18n.get("generated_date", date=generated_date),
         family_leaderboard_title=i18n.get("family_leaderboard_title"),
         leaderboard_items="".join(leaderboard_items),

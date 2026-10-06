@@ -98,7 +98,9 @@ class UserProgress(TypedDict):
     username: str
     name: str
     streak: int
-    total_xp: int
+    total_xp: int  # Duolingo's totalXp, including non-language XP
+    language_xp: int  # Sum of language course XP, used for the league
+    other_xp: int  # Non-language XP (total_xp - language_xp), not counted
     weekly_xp: int
     weekly_xp_per_language: dict[str, int]
     daily_xp: int

@@ -1,6 +1,6 @@
 """Report generation for Duolingo Family League"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 
@@ -26,8 +26,8 @@ def generate_leaderboard(
                     "streak": data["streak"],
                     "weekly_xp": data.get("weekly_xp", 0),
                     "daily_xp": data.get("daily_xp", 0),
-                    "total_xp": data.get("total_xp", 0),
-                    "target_xp": data.get("total_xp", 0),
+                    "total_xp": data.get("language_xp", data.get("total_xp", 0)),
+                    "other_xp": data.get("other_xp", 0),
                     "data": data,
                 }
             )
@@ -91,14 +91,26 @@ def generate_daily_report(results: dict[str, Any]) -> str:
     return "\n".join(report)
 
 
-def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> str:
-    """Generate comprehensive weekly family report"""
+def generate_weekly_report(
+    results: dict[str, Any],
+    goals: dict[str, Any],
+    week_ending: datetime | None = None,
+) -> str:
+    """Generate comprehensive weekly family report
+
+    Args:
+        results: User progress data
+        goals: League goals
+        week_ending: Last day covered by the report (defaults to yesterday, as
+                     weekly reports run on Monday for the previous Mon-Sun week)
+    """
     leaderboard = generate_leaderboard(results)
+    week_ending = week_ending or datetime.now() - timedelta(days=1)
 
     report: list[str] = []
     report.append("🏆 DUOLINGO FAMILY LEAGUE - WEEKLY REPORT")
     report.append("=" * 55)
-    report.append(f"Week ending: {datetime.now().strftime('%Y-%m-%d')}")
+    report.append(f"Week ending: {week_ending.strftime('%Y-%m-%d')}")
     report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     # Overall leaderboard
@@ -173,6 +185,11 @@ def generate_weekly_report(results: dict[str, Any], goals: dict[str, Any]) -> st
         elif data.get("active_languages"):
             report.append(
                 f"   📚 Active Languages: {', '.join(data['active_languages'])}"
+            )
+
+        if data.get("other_xp", 0) > 0:
+            report.append(
+                f"   🧩 Non-language XP: {data['other_xp']:,} XP (not counted in the league)"
             )
 
         report.append("")
