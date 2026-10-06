@@ -266,44 +266,6 @@ class TestSQLiteStorage:
         assert "date_range" in stats
         assert stats["database_size_mb"] > 0
 
-    def test_cleanup_old_data(self, temp_db, sample_user_data):
-        """Test cleaning up old data"""
-        storage = SQLiteStorage(temp_db)
-
-        # Save data for multiple days
-        with patch("src.sqlite_storage.datetime") as mock_datetime:
-            # Old data (should be cleaned up)
-            mock_datetime.now.return_value.strftime.return_value = "2025-06-01"
-            mock_datetime.now.return_value.isoformat.return_value = (
-                "2025-06-01T10:00:00"
-            )
-            storage.save_daily_data(sample_user_data)
-
-            # Recent data (should be kept)
-            mock_datetime.now.return_value.strftime.return_value = "2025-08-14"
-            mock_datetime.now.return_value.isoformat.return_value = (
-                "2025-08-14T10:00:00"
-            )
-            storage.save_daily_data(sample_user_data)
-
-        # Verify both entries exist
-        history_before = storage.load_history()
-        assert len(history_before) == 2
-
-        # Cleanup with a small retention period
-        with patch("src.sqlite_storage.SQLiteStorage.cleanup_old_data"):
-            # Manually delete old data to simulate cleanup
-            import sqlite3
-
-            with sqlite3.connect(temp_db) as conn:
-                conn.execute("DELETE FROM daily_snapshots WHERE date < '2025-08-01'")
-                conn.commit()
-
-        # Verify old data was removed
-        history_after = storage.load_history()
-        assert len(history_after) == 1
-        assert history_after[0]["date"] == "2025-08-14"
-
 
 class TestStorageFactory:
     """Test storage factory functionality"""

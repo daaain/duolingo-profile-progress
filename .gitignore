@@ -1,9 +1,6 @@
 # Logs and generated files
 *.log
 
-# Configuration files (contains sensitive data)
-family_league_config.json
-
 # Python
 __pycache__/
 *.py[cod]
@@ -60,9 +57,7 @@ Temporary Items
 
 # Project specific
 league_data
-com.duolingo.familyleague.plist
 .env
-league_data
 daily_report_*.txt
 daily_report_*.html
 weekly_report_*

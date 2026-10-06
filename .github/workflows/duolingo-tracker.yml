@@ -60,7 +60,6 @@ jobs:
           STORAGE_BACKEND: gist
           GIST_ID: ${{ secrets.GIST_ID }}
           GITHUB_TOKEN: ${{ secrets.GIST_TOKEN }}
-          TIMEZONE: ${{ vars.TIMEZONE || 'UTC' }}
           SMTP_SERVER: smtp.gmail.com
           SMTP_PORT: 587
           SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}

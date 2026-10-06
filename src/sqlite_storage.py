@@ -287,20 +287,6 @@ class SQLiteStorage(StorageInterface):
 
             return list(reversed(history))  # Return chronological order
 
-    def cleanup_old_data(self, keep_days: int = 90) -> None:
-        """Remove old data beyond the specified number of days"""
-        with sqlite3.connect(self.db_path) as conn:
-            # Delete old snapshots and cascading data
-            conn.execute(
-                """
-                DELETE FROM daily_snapshots 
-                WHERE date < date('now', '-{} days')
-            """.format(keep_days)
-            )
-            conn.commit()
-
-        print(f"Cleaned up data older than {keep_days} days")
-
     def get_database_stats(self) -> dict[str, Any]:
         """Get database statistics"""
         with sqlite3.connect(self.db_path) as conn:

@@ -126,23 +126,6 @@ Run once a night, after everyone's day has ended, so each snapshot holds the ful
 0 5 * * 1 cd /path/to/duolingo-family-league && python duolingo_family_league.py --weekly --send-email
 ```
 
-### macOS LaunchAgent (Recommended for Mac users)
-
-The project includes a LaunchAgent configuration for reliable scheduling:
-
-1. Update the username in the plist file:
-
-   ```bash
-   sed -i '' 's/YOUR_USERNAME/'"$USER"'/g' com.duolingo.familyleague.plist
-   ```
-
-2. Install the LaunchAgent:
-
-   ```bash
-   cp com.duolingo.familyleague.plist ~/Library/LaunchAgents/
-   launchctl load ~/Library/LaunchAgents/com.duolingo.familyleague.plist
-   ```
-
 ### GitHub Actions (Recommended for serverless deployment)
 
 Run the tracker entirely on GitHub infrastructure with no server required:
@@ -169,7 +152,6 @@ Run the tracker entirely on GitHub infrastructure with no server required:
    - `FAMILY_EMAIL_LIST` - Comma-separated recipient emails
 
 4. **Configure repository variables** (Settings → Secrets and variables → Actions → Variables):
-   - `TIMEZONE` - (Optional) Your timezone, e.g., `Europe/London` (defaults to `UTC`)
    - `DUOLINGO_REPORT_LANGUAGE` - (Optional) Report language, e.g., `en` or `hu`
 
 5. **Enable GitHub Pages:**
@@ -283,7 +265,6 @@ The application supports three storage backends:
 - 50-100x faster queries for historical data analysis
 - Atomic transactions prevent data corruption
 - Advanced querying capabilities (user/language-specific histories)
-- Automatic data cleanup and maintenance features
 - Much smaller storage footprint for large datasets
 
 ### Data Migration

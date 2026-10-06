@@ -54,13 +54,3 @@ class StorageFactory:
     def get_available_backends() -> list[str]:
         """Get list of available storage backends"""
         return ["json", "sqlite", "gist"]
-
-    @staticmethod
-    def get_default_backend() -> str:
-        """Get the default storage backend"""
-        return os.getenv("STORAGE_BACKEND", "json").lower()
-
-
-def create_default_storage() -> StorageInterface:
-    """Create storage using default configuration"""
-    return StorageFactory.create_storage()
