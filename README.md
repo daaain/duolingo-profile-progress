@@ -116,14 +116,14 @@ HTML reports include professional styling, responsive design, and rich formattin
 
 ### Automation with Cron
 
-Add to your crontab for automatic daily and weekly reports:
+Run once a night, after everyone's day has ended, so each snapshot holds the full figures for the day before. On Mondays, run the weekly report for Monday to Sunday instead of the daily one. Cron uses the machine's local time, so adjust the hour if it isn't on UTC:
 
 ```bash
-# Daily check at 8 PM
-0 20 * * * cd /path/to/duolingo-family-league && python duolingo_family_league.py --daily
+# Daily update at 05:00 UTC, Tuesday to Sunday
+0 5 * * 0,2-6 cd /path/to/duolingo-family-league && python duolingo_family_league.py --daily
 
-# Weekly report on Sundays at 9 PM
-0 21 * * 0 cd /path/to/duolingo-family-league && python duolingo_family_league.py --weekly --send-email
+# Weekly report at 05:00 UTC on Mondays
+0 5 * * 1 cd /path/to/duolingo-family-league && python duolingo_family_league.py --weekly --send-email
 ```
 
 ### macOS LaunchAgent (Recommended for Mac users)
